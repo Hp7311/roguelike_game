@@ -6,7 +6,6 @@ pub enum Tile {
     Floor,
 }
 
-pub const PLAYER_STRENGTH: u32 = 10;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct MonsterType {

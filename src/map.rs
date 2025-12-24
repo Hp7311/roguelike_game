@@ -1,12 +1,17 @@
 // provides Map
 use crate::entities::{Tile, MonsterType};
 use crate::entities;
+use crate::constants;
 use rand::Rng;
 use rand::seq::SliceRandom;
 use rand::prelude::IndexedRandom;
-use crossterm::cursor::MoveToColumn;
+use crossterm::cursor::{MoveToColumn, MoveTo};
 use crossterm::execute;
 use std::io::Write;
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
+
+static LOGS: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
 
 #[derive(Debug, Clone)]
 pub struct Map(Vec<Vec<Tile>>);
@@ -16,6 +21,16 @@ impl Map {
 
     pub fn draw(&self) {
         
+        
+        // prints current hp
+        execute!(
+            std::io::stdout(),
+            MoveTo(0, 0)
+        ).unwrap();
+        
+        println!("Your HP: {}", self.get_player_hp());
+        
+        // prints map
         for inner in &self.0 {
             execute!(
                 std::io::stdout(), MoveToColumn(0)
@@ -32,7 +47,18 @@ impl Map {
             }
             println!();
         }
-        println!("Your HP: {}", self.get_player_hp());
+        
+        // prints log if any
+        execute!(
+            std::io::stdout(), MoveTo(0, 13)
+        ).unwrap();
+        
+        let logs = LOGS
+            .lock()
+            .expect("Cannot open log global variable");
+        print!("{}", logs);
+        std::io::Stdout::flush().unwrap();
+        
     }
     
     fn get_player_hp(&self) -> i32 {
@@ -143,8 +169,14 @@ impl Map {
                     return_vec = self.attack(
                         player,
                         monster,
-                        entities::PLAYER_STRENGTH,
-                    )
+                        constants::PLAYER_STRENGTH,
+                    );
+                    log_message(
+                        &format!("You attacked Monster at {:?} of {} damage!",
+                            monster, constants::PLAYER_STRENGTH
+                        )
+                    );
+                    
                 }
             }
         }
@@ -272,7 +304,7 @@ impl Map {
                 if let Tile::Player(_) = return_vec[att_x][att_y] {
                     return_vec[v_x][v_y] = Tile::Monster(
                         MonsterType {
-                            hp: monstertype.hp - entities::PLAYER_STRENGTH as i32,
+                            hp: monstertype.hp - constants::PLAYER_STRENGTH as i32,
                             glyph: monstertype.glyph,
                             strength: monstertype.strength,
                         }
@@ -312,6 +344,24 @@ pub fn init_map() -> Map {
     Map (return_vec)
         .dig_floors()
         .add_player()
-        .add_monsters(10)
+        .add_monsters(constants::MONSTER_NUMBER)
     
+}
+
+fn log_message(msg: &str) {
+    let mut logs = LOGS
+        .lock()
+        .expect("Cannot open log global variable");
+     
+    logs = msg.to_string();
+}
+
+fn print_last_log(s: &str, n: usize) {
+    // Get the length in bytes safely
+    let len = s.chars().count(); // count of Unicode chars
+    let start = if len > n { len - n } else { 0 };
+    
+    // Use chars iterator and skip to start
+    let last_part: String = s.chars().skip(start).collect();
+    println!("{}", last_part);
 }

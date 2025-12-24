@@ -2,11 +2,12 @@ use crossterm::event::{read, Event, KeyCode};
 use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 use crossterm::execute;
 use crossterm::terminal;
-use crossterm::cursor::MoveToColumn;
+use crossterm::cursor::MoveTo;
 use std::io::stdout;
 
 mod map;
 mod entities;
+mod constants;
 
 #[derive(Debug)]
 enum RunState {
@@ -31,7 +32,6 @@ impl State {
         execute!(
             stdout(),
             terminal::Clear(terminal::ClearType::All),
-            MoveToColumn(0)
         ).unwrap();
         
         self.map.draw();
@@ -68,6 +68,10 @@ fn main() -> Result<(), std::io::Error> {
                 gs.runstate = RunState::AwaitingInput;
             },
             RunState::AwaitingInput => {
+                execute!(
+                    stdout(),
+                    MoveTo(0, 11)
+                );
                 let mut key = 'a';
                 loop {
                     if let Event::Key(event) = read()? {
@@ -96,7 +100,7 @@ fn main() -> Result<(), std::io::Error> {
             },
             RunState::GameOver => {
                 gs.get_death_screen();
-                // TODO wait for restart/quit
+                
                 let mut key = 'a';
                 loop {
                     if let Event::Key(event) = read()? {
