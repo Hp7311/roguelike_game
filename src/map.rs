@@ -2,6 +2,9 @@
 use crate::entities::Tile;
 use crate::entities;
 use rand::Rng;
+use crossterm::cursor::MoveToColumn;
+use crossterm::execute;
+use std::io::Write;
 
 #[derive(Debug)]
 pub struct Map(Vec<Vec<Tile>>);
@@ -9,16 +12,27 @@ pub struct Map(Vec<Vec<Tile>>);
 
 impl Map {
     pub fn draw(&self) {
-        for small in &self.0 {
-            for tile in small {
-                match tile {
-                    Tile::Wall => print!("#"),
-                    Tile::Player => print!("@"),
-                    Tile::Monster => print!("M"),  // TODO add more
-                    _ => {},
-                }
+    
+        let mut stdout = std::io::stdout().lock();
+        execute!(
+            stdout, MoveToColumn(0)
+        ).unwrap();
+        
+        for inner in &self.0 {
+            execute!(
+                stdout, MoveToColumn(0)
+            ).unwrap();
+            
+            for tile in inner {
+                let print_ch = match tile {
+                    Tile::Wall => "# ",
+                    Tile::Player => "@ ",
+                    Tile::Monster => "M ",  // TODO add more
+                    Tile::Floor => "- ",
+                };
+                write!(stdout, "{}", print_ch).unwrap();
             }
-            println!("");
+            writeln!(stdout).unwrap();
         }
     }
     
@@ -38,39 +52,54 @@ impl Map {
     
     pub fn move_player(&self, to: char) -> Self {
         // moves player to a direction and returns new map
-        let mut return_vec = self.0;
+        
+        let mut return_vec = self.0.clone();
+        let mut player_pos = None;
+        
+        // determine player position
         for (a, inner) in return_vec.iter().enumerate() {
             for (i, tile) in inner.iter().enumerate() {
                 if *tile == Tile::Player {
-                    match to {
-                        'w' => {
-                            if return_vec[a-1][i] == Tile::Floor {
-                                return_vec[a][i] = Tile::Floor;
-                                return_vec[a-1][i] = Tile::Player;
-                            }
-                        },
-                        'a' => {
-                            if return_vec[a][i-1] == Tile::Floor {
-                                return_vec[a][i] = Tile::Floor;
-                                return_vec[a][i-1] = Tile::Player;
-                            }
-                        },
-                        's' => {
-                            if return_vec[a+1][i] == Tile::Floor {
-                                return_vec[a][i] = Tile::Floor;
-                                return_vec[a+1][i] = Tile::Player;
-                            }
-                        },
-                        'd' => {
-                            if return_vec[a][i+1] == Tile::Floor {
-                                return_vec[a][i] = Tile::Floor;
-                                return_vec[a][i+1] = Tile::Player;
-                            }
-                        },
-                        _ => {},
-                    }
+                    player_pos = Some((a, i))
                 }
             }
+        }
+        
+        if let Some((a, i)) = player_pos{
+        
+            match to {
+        
+                'w' => {
+                    if a != 0 && return_vec[a-1][i] == Tile::Floor {
+                        return_vec[a][i] = Tile::Floor;
+                        return_vec[a-1][i] = Tile::Player;
+                    }
+                },
+            
+                'a' => {
+                    if i != 0 && return_vec[a][i-1] == Tile::Floor {
+                        return_vec[a][i] = Tile::Floor;
+                        return_vec[a][i-1] = Tile::Player;
+                    }
+                },
+            
+                's' => {
+                    if a != return_vec.len()-1 && return_vec[a+1][i] == Tile::Floor {
+                        return_vec[a][i] = Tile::Floor;
+                        return_vec[a+1][i] = Tile::Player;
+                    }
+                },
+            
+                'd' => {
+                    if i != return_vec[0].len()-1 && return_vec[a][i+1] == Tile::Floor {
+                        return_vec[a][i] = Tile::Floor;
+                        return_vec[a][i+1] = Tile::Player;
+                    }
+                },
+            
+                _ => {},
+            }
+        
         }
         
         Map (return_vec)
@@ -89,10 +118,10 @@ impl Map {
             return_vec.push(Vec::new());
             let index: usize = return_vec.len() - 1;
             
-            for tile in inner {
+            for _ in inner {
                 
                 // TODO add corridors, not random
-                let b: bool = rand::random();
+                let b = rand::random();
                 if b {
                     return_vec[index].push(Tile::Floor);
                 } else {
@@ -112,6 +141,7 @@ impl Map {
         Map (return_vec)
     }
 }
+
 
 pub fn init_map() -> Map {
     /*   length

@@ -1,6 +1,9 @@
 use crossterm::event::{read, Event, KeyCode};
 use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 use crossterm::execute;
+use crossterm::terminal;
+use crossterm::cursor::MoveToColumn;
+use std::io::stdout;
 
 mod map;
 mod entities;
@@ -25,20 +28,21 @@ struct State {
 
 impl State {
     fn render(&self) {
-        //execute!(terminal::Clear(terminal::ClearType::All));
+        execute!(
+            stdout(),
+            terminal::Clear(terminal::ClearType::All),
+            MoveToColumn(0)
+        ).unwrap();
+        
         self.map.draw();
         // TODO add drawing player stats
     }
 
     /*fn run_monsters(&mut self) {
         self.map = self.map.handle_monsters();
-    }*/
-    
-    fn move_player(&mut self, to: char) {
-        self.map = self.map.move_player(to);
     }
     
-    /*fn run_player(&self) {
+    fn run_player(&self) {
         self.map.handle_player()
     }
     
@@ -62,7 +66,7 @@ fn main() -> Result<(), std::io::Error> {
         match gs.runstate {
             RunState::PreRun => {
                 gs.runstate = RunState::AwaitingInput;
-            }
+            },
             RunState::AwaitingInput => {
                 let mut key = 'a';
                 loop {
@@ -81,15 +85,15 @@ fn main() -> Result<(), std::io::Error> {
                     },
                     _ => {},
                 }
-            }
+            },
             RunState::PlayerTurn => {
                 //gs.run_player();
                 gs.runstate = RunState::MonsterTurn;
-            }
+            },
             RunState::MonsterTurn => {
                 //gs.run_monsters();
                 gs.runstate = RunState::AwaitingInput;
-            }
+            },
             RunState::GameOver => {
                 //gs.get_death_screen();
                 // TODO wait for restart/quit
@@ -98,7 +102,7 @@ fn main() -> Result<(), std::io::Error> {
                     if let Event::Key(event) = read()? {
                         if let KeyCode::Char(c) = event.code {
                             key = c;
-                            break;
+                            
                         }
                     }
                     match key {
@@ -108,7 +112,7 @@ fn main() -> Result<(), std::io::Error> {
                     }
                 }
                 
-            }
+            },
         }
 
         // --- THE RENDER STEP ---
