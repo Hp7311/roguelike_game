@@ -1,7 +1,9 @@
 // provides Map
-use crate::entities::Tile;
+use crate::entities::{Tile, MonsterType};
 use crate::entities;
 use rand::Rng;
+use rand::seq::SliceRandom;
+use rand::prelude::IndexedRandom;
 use crossterm::cursor::MoveToColumn;
 use crossterm::execute;
 use std::io::Write;
@@ -20,10 +22,10 @@ impl Map {
             
             for tile in inner {
                 let print_ch = match tile {
-                    Tile::Wall => "# ",
-                    Tile::Player => "@ ",
-                    Tile::Monster => "M ",  // TODO add more
-                    Tile::Floor => "- ",
+                    Tile::Wall => "# ".to_string(),
+                    Tile::Player => "@ ".to_string(),
+                    Tile::Monster(Type) => format!("{} ", Type.glyph),  // TODO add more
+                    Tile::Floor => "- ".to_string(),
                 };
                 print!("{}", print_ch);
             }
@@ -132,13 +134,24 @@ impl Map {
     }
     
     fn add_monsters(&self, num: u32) -> Self {
+    
+        let monster_types = vec![
+            MonsterType { hp: 10, glyph: 'G' },  // goblin
+            MonsterType { hp: 20, glyph: 'O' },  // orc
+            MonsterType { hp: 15, glyph: 'E' },  // elf
+        ];
+        
+        let mut rng = rand::rng();
+    
         let mut return_vec = self.0.clone();
         for _ in 0..num {
-            loop{
-                let x = rand::rng().random_range(..return_vec.len());
-                let y = rand::rng().random_range(..return_vec[0].len());
+            loop {
+                let x = rng.random_range(..return_vec.len());
+                let y = rng.random_range(..return_vec[0].len());
+                let Some(mons_type) = monster_types.choose(&mut rng) else { panic!() };
+                
                 if return_vec[x][y] == Tile::Floor {
-                    return_vec[x][y] = Tile::Monster;
+                    return_vec[x][y] = Tile::Monster(mons_type.clone());
                     break;
                 }
             }

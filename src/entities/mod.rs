@@ -2,12 +2,12 @@
 pub enum Tile {
     Player,
     Wall,
-    Monster,
+    Monster(MonsterType),
     Floor,
 }
 
-/*#[derive(Debug, PartialEq, Clone)]
-struct MonsterType {
-    hp: i32,
-    glyph: char,
-}*/
+#[derive(Debug, PartialEq, Clone)]
+pub struct MonsterType {
+    pub hp: i32,
+    pub glyph: char,
+}
