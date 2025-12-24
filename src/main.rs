@@ -38,17 +38,17 @@ impl State {
         // TODO add drawing player stats
     }
 
-    /*fn run_monsters(&mut self) {
+    fn run_monsters(&mut self) {
         self.map = self.map.handle_monsters();
     }
     
-    fn run_player(&self) {
-        self.map.handle_player()
+    fn run_player(&mut self) {
+        self.map = self.map.handle_player()
     }
     
     fn get_death_screen(&self) {
         self.map.get_player_stats()
-    }*/
+    }
 }
 
 fn main() -> Result<(), std::io::Error> {
@@ -87,15 +87,15 @@ fn main() -> Result<(), std::io::Error> {
                 }
             },
             RunState::PlayerTurn => {
-                //gs.run_player();
+                gs.run_player();
                 gs.runstate = RunState::MonsterTurn;
             },
             RunState::MonsterTurn => {
-                //gs.run_monsters();
+                gs.run_monsters();
                 gs.runstate = RunState::AwaitingInput;
             },
             RunState::GameOver => {
-                //gs.get_death_screen();
+                gs.get_death_screen();
                 // TODO wait for restart/quit
                 let mut key = 'a';
                 loop {

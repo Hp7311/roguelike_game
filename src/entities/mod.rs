@@ -5,3 +5,9 @@ pub enum Tile {
     Monster,
     Floor,
 }
+
+/*#[derive(Debug, PartialEq, Clone)]
+struct MonsterType {
+    hp: i32,
+    glyph: char,
+}*/

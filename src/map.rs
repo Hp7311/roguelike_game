@@ -6,21 +6,16 @@ use crossterm::cursor::MoveToColumn;
 use crossterm::execute;
 use std::io::Write;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Map(Vec<Vec<Tile>>);
 
 
 impl Map {
     pub fn draw(&self) {
-    
-        let mut stdout = std::io::stdout().lock();
-        execute!(
-            stdout, MoveToColumn(0)
-        ).unwrap();
         
         for inner in &self.0 {
             execute!(
-                stdout, MoveToColumn(0)
+                std::io::stdout(), MoveToColumn(0)
             ).unwrap();
             
             for tile in inner {
@@ -30,25 +25,15 @@ impl Map {
                     Tile::Monster => "M ",  // TODO add more
                     Tile::Floor => "- ",
                 };
-                write!(stdout, "{}", print_ch).unwrap();
+                print!("{}", print_ch);
             }
-            writeln!(stdout).unwrap();
+            println!();
         }
     }
     
-    /*pub fn handle_monsters(&self) -> Self {
-        return_map = Map(init_map)
-        for small in &self.0 {
-            for tile in small {
-                if tile == Tile::Monster {
-                    if entities::monster_can_see_you(self) {
-                        entities::monster_move_to_player(self);
-                    }
-                }
-                
-            }
-        }
-    }*/
+    pub fn handle_monsters(&self) -> Self {
+        self.clone()
+    }
     
     pub fn move_player(&self, to: char) -> Self {
         // moves player to a direction and returns new map
@@ -105,8 +90,13 @@ impl Map {
         Map (return_vec)
     }
     
-    //pub fn handle_player(&self) {}
-    //pub fn get_player_stats(&self)
+    pub fn handle_player(&self) -> Self {
+        self.clone()
+    }
+    
+    pub fn get_player_stats(&self) {
+        println!("You died!");
+    }
     
     fn dig_floors(&self) -> Self {
         let mut return_vec = Vec::new();
@@ -140,6 +130,21 @@ impl Map {
         return_vec[x][y] = Tile::Player;
         Map (return_vec)
     }
+    
+    fn add_monsters(&self, num: u32) -> Self {
+        let mut return_vec = self.0.clone();
+        for _ in 0..num {
+            loop{
+                let x = rand::rng().random_range(..return_vec.len());
+                let y = rand::rng().random_range(..return_vec[0].len());
+                if return_vec[x][y] == Tile::Floor {
+                    return_vec[x][y] = Tile::Monster;
+                    break;
+                }
+            }
+        }
+        Map (return_vec)
+    }
 }
 
 
@@ -167,5 +172,6 @@ pub fn init_map() -> Map {
     Map (return_vec)
         .dig_floors()
         .add_player()
+        .add_monsters(2)
     
 }
