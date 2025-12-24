@@ -114,6 +114,12 @@ fn main() -> Result<(), std::io::Error> {
                 
             },
         }
+        
+        gs.map = gs.map.delete_dead();
+        
+        if !gs.map.player_exists() {
+            gs.runstate = RunState::GameOver
+        }
 
         // --- THE RENDER STEP ---
         gs.render();

@@ -13,6 +13,7 @@ pub struct Map(Vec<Vec<Tile>>);
 
 
 impl Map {
+
     pub fn draw(&self) {
         
         for inner in &self.0 {
@@ -46,41 +47,43 @@ impl Map {
         // determine player position
         for (a, inner) in return_vec.iter().enumerate() {
             for (i, tile) in inner.iter().enumerate() {
-                if *tile == Tile::Player {
+                if *tile == Tile::Player(_) {
                     player_pos = Some((a, i))
                 }
             }
         }
         
-        if let Some((a, i)) = player_pos{
-        
+        if let Some((a, i)) = player_pos {
+            
+            if let Tile::Player(player_hp) = return_vec[a][i];
+            
             match to {
         
                 'w' => {
                     if a != 0 && return_vec[a-1][i] == Tile::Floor {
                         return_vec[a][i] = Tile::Floor;
-                        return_vec[a-1][i] = Tile::Player;
+                        return_vec[a-1][i] = Tile::Player(player_hp);
                     }
                 },
             
                 'a' => {
                     if i != 0 && return_vec[a][i-1] == Tile::Floor {
                         return_vec[a][i] = Tile::Floor;
-                        return_vec[a][i-1] = Tile::Player;
+                        return_vec[a][i-1] = Tile::Player(player_hp);
                     }
                 },
             
                 's' => {
                     if a != return_vec.len()-1 && return_vec[a+1][i] == Tile::Floor {
                         return_vec[a][i] = Tile::Floor;
-                        return_vec[a+1][i] = Tile::Player;
+                        return_vec[a+1][i] = Tile::Player(player_hp);
                     }
                 },
             
                 'd' => {
                     if i != return_vec[0].len()-1 && return_vec[a][i+1] == Tile::Floor {
                         return_vec[a][i] = Tile::Floor;
-                        return_vec[a][i+1] = Tile::Player;
+                        return_vec[a][i+1] = Tile::Player(player_hp);
                     }
                 },
             
@@ -93,11 +96,75 @@ impl Map {
     }
     
     pub fn handle_player(&self) -> Self {
-        self.clone()
+        let return_vec = self.clone().0;
+        let mut player_pos = None;
+        let mut monster_list = Vec::new();
+        
+        for (a, inner) in &self.0.iter().enumerate() {
+            for (i, tile) in inner.iter().enumerate() {
+                if tile == Tile::Player(_) {
+                    player_pos = Some((a, i));
+                }
+                if tile == Tile::Monster(_) {
+                    monster_list.push((a, i))
+                }
+            }
+        }
+        
+        if let Some(player) = player_pos {
+            for monster in monster_list {
+                if entities::in_range(player, monster) {
+                    return_vec = self.attack(
+                        player,
+                        monster,
+                        entities::PLAYER_STRENGTH,
+                    )
+                }
+            }
+        }
     }
     
     pub fn get_player_stats(&self) {
         println!("You died!");
+    }
+    
+    pub fn delete_dead(&self) -> Self {
+        let return_vec = self.clone().0;
+        
+        for (a, inner) in &self.0.iter().enumerate() {
+            for (i, tile) in inner.iter().enumerate() {
+                match tile {
+                    Tile::Player(hp) => {
+                        if hp < 0 {
+                            return_vec[a][i] = Tile::Floor;
+                        }
+                    },
+                    Tile::Monster(monstertype) => {
+                        if monstertype.hp < 0 {
+                            return_vec[a][i] = Tile::Floor;
+                        }
+                    },
+                    _ => {},
+                }
+            }
+        }
+        
+        Map (return_vec)
+    }
+    
+    pub fn player_exists(&self) -> bool {
+        let mut player_exists = false;
+        
+        for inner in &self.0 {
+            for tile in inner {
+                if tile == Tile::Player {
+                    player_exists = true;
+                    break;
+                }
+            }
+        }
+        
+        player_exists
     }
     
     fn dig_floors(&self) -> Self {
@@ -129,16 +196,16 @@ impl Map {
         let mut return_vec = self.0.clone();
         let x = rand::rng().random_range(..return_vec.len());
         let y = rand::rng().random_range(..return_vec[0].len());
-        return_vec[x][y] = Tile::Player;
+        return_vec[x][y] = Tile::Player(100);
         Map (return_vec)
     }
     
     fn add_monsters(&self, num: u32) -> Self {
     
         let monster_types = vec![
-            MonsterType { hp: 10, glyph: 'G' },  // goblin
-            MonsterType { hp: 20, glyph: 'O' },  // orc
-            MonsterType { hp: 15, glyph: 'E' },  // elf
+            MonsterType { hp: 10, glyph: 'G', strength: 30 },  // goblin
+            MonsterType { hp: 20, glyph: 'O', strength: 10 },  // orc
+            MonsterType { hp: 15, glyph: 'E', strength: 15 },  // elf
         ];
         
         let mut rng = rand::rng();
@@ -158,6 +225,37 @@ impl Map {
         }
         Map (return_vec)
     }
+    
+    fn attack(&self, attacker: (u32, u32), victum: (u32, u32), strength: u32) -> Self {
+        return_vec = self.clone().0;
+        
+        let (att_x, att_y) = attacker;
+        let (v_x, v_y) = victum;
+        
+        match return_vec[v_x][v_y] {
+            Tile::Player(hp) => {
+                if let Tile::Monster(monstertype) = return_vec[att_x][att_y] {
+                    return_vec[v_x][v_y] = Tile::Player(
+                        hp - strength
+                    )
+                }
+            },
+            Tile::Monster(monstertype) => {
+                if let Tile::Player(_) = return_vec[att_x][att_y] {
+                    returns[v_x][v_y] = Tile::Monster(
+                        MonsterType {
+                            hp: monstertype.hp - entities::strength,
+                            glyph: monstertype.glyph,
+                            strength: monstertype.strength,
+                        }
+                    )
+                }
+            },
+        }
+        
+        Map (return_vec)
+    }
+    
 }
 
 
