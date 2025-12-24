@@ -1,14 +1,14 @@
 #[derive(Debug, PartialEq, Clone)]
 pub enum Tile {
-    Player(hp),
+    Player(i32),
     Wall,
     Monster(MonsterType),
     Floor,
 }
 
-const PLAYER_STRENGTH: u32 = 10;
+pub const PLAYER_STRENGTH: u32 = 10;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct MonsterType {
     pub hp: i32,
     pub glyph: char,
@@ -16,7 +16,7 @@ pub struct MonsterType {
 }
 
 
-pub fn in_range(source: (u32, u32), target: (u32, u32)) -> bool {
+pub fn in_range(source: (usize, usize), target: (usize, usize)) -> bool {
     let (source_x, source_y) = source;
     let (target_x, target_y) = target;
     
