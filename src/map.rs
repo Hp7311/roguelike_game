@@ -11,17 +11,14 @@ use std::io::Write;
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 
-static LOGS: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
 
-#[derive(Debug, Clone)]
-pub struct Map(Vec<Vec<Tile>>);
+#[derive(Debug, Clone, PartialEq)]
+pub struct Map (Vec<Vec<Tile>>, String);
 
 
 impl Map {
 
     pub fn draw(&self) {
-        
-        
         // prints current hp
         execute!(
             std::io::stdout(),
@@ -49,15 +46,12 @@ impl Map {
         }
         
         // prints log if any
-        execute!(
+        /*execute!(
             std::io::stdout(), MoveTo(0, 13)
-        ).unwrap();
+        ).unwrap();*/
         
-        let logs = LOGS
-            .lock()
-            .expect("Cannot open log global variable");
-        print!("{}", logs);
-        std::io::Stdout::flush().unwrap();
+        println!("{}", self.1);
+        //std::io::Stdout::flush().unwrap();
         
     }
     
@@ -144,7 +138,7 @@ impl Map {
             }
         }
         
-        Map (return_vec)
+        Map (return_vec, self.1.clone())
     }
     
     pub fn handle_player(&self) -> Self {
@@ -163,6 +157,7 @@ impl Map {
             }
         }
         
+        let mut return_log = String::new();
         if let Some(player) = player_pos {
             for monster in monster_list {
                 if entities::in_range(player, monster) {
@@ -171,8 +166,9 @@ impl Map {
                         monster,
                         constants::PLAYER_STRENGTH,
                     );
-                    log_message(
-                        &format!("You attacked Monster at {:?} of {} damage!",
+                    return_log.push_str(
+                        &format!(
+                            "You attacked {:?} of {} damage!\n",
                             monster, constants::PLAYER_STRENGTH
                         )
                     );
@@ -181,7 +177,7 @@ impl Map {
             }
         }
         
-        Map (return_vec)
+        Map (return_vec, return_log)
     }
     
     pub fn get_player_stats(&self) {
@@ -209,7 +205,7 @@ impl Map {
             }
         }
         
-        Map (return_vec)
+        Map (return_vec, self.1.clone())
     }
     
     pub fn player_exists(&self) -> bool {
@@ -249,7 +245,7 @@ impl Map {
             }
         }
         
-        Map (return_vec)
+        Map (return_vec, self.1.clone())
     }
     
     fn add_player(&self) -> Self {
@@ -257,7 +253,8 @@ impl Map {
         let x = rand::rng().random_range(..return_vec.len());
         let y = rand::rng().random_range(..return_vec[0].len());
         return_vec[x][y] = Tile::Player(100);
-        Map (return_vec)
+        
+        Map (return_vec, self.1.clone())
     }
     
     fn add_monsters(&self, num: u32) -> Self {
@@ -283,7 +280,7 @@ impl Map {
                 }
             }
         }
-        Map (return_vec)
+        Map (return_vec, self.1.clone())
     }
     
     fn attack(&self, attacker: (usize, usize), victum: (usize, usize), strength: u32) -> Vec<Vec<Tile>> {
@@ -341,27 +338,9 @@ pub fn init_map() -> Map {
         }
     }
     
-    Map (return_vec)
+    Map (return_vec, String::new())
         .dig_floors()
         .add_player()
         .add_monsters(constants::MONSTER_NUMBER)
     
-}
-
-fn log_message(msg: &str) {
-    let mut logs = LOGS
-        .lock()
-        .expect("Cannot open log global variable");
-     
-    logs = msg.to_string();
-}
-
-fn print_last_log(s: &str, n: usize) {
-    // Get the length in bytes safely
-    let len = s.chars().count(); // count of Unicode chars
-    let start = if len > n { len - n } else { 0 };
-    
-    // Use chars iterator and skip to start
-    let last_part: String = s.chars().skip(start).collect();
-    println!("{}", last_part);
 }
