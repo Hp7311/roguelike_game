@@ -45,16 +45,11 @@ impl State {
     fn run_player(&mut self) {
         self.map = self.map.handle_player()
     }
-    
-    fn get_death_screen(&self) {
-        self.map.get_player_stats()
-    }
 }
 
 fn main() -> Result<(), std::io::Error> {
 
-    // --- INITIALIZATION --
-    enable_raw_mode()?;
+    // --- INITIALIZATION ----
     
     let mut gs = State {
         map: map::init_map(),
@@ -63,15 +58,19 @@ fn main() -> Result<(), std::io::Error> {
 
     // --- CORE GAME LOOP ---
     loop {
+        enable_raw_mode()?;
         match gs.runstate {
             RunState::PreRun => {
-                gs.runstate = RunState::AwaitingInput;
+                gs = State {
+                    map: map::init_map(),
+                    runstate: RunState::AwaitingInput,
+                };
             },
             RunState::AwaitingInput => {
                 execute!(
                     stdout(),
                     MoveTo(0, 11)
-                );
+                ).unwrap();
                 let mut key = 'a';
                 loop {
                     if let Event::Key(event) = read()? {
@@ -84,6 +83,7 @@ fn main() -> Result<(), std::io::Error> {
                 if key == 'q' { break }
                 match key {
                     'w' | 'a' | 's' | 'd' => {
+                        gs.map = gs.map.clear_log();
                         gs.map = gs.map.move_player(key);
                         gs.runstate = RunState::PlayerTurn;
                     },
@@ -99,7 +99,7 @@ fn main() -> Result<(), std::io::Error> {
                 gs.runstate = RunState::AwaitingInput;
             },
             RunState::GameOver => {
-                gs.get_death_screen();
+                println!("You died!");
                 
                 let mut key = 'a';
                 loop {
@@ -122,13 +122,24 @@ fn main() -> Result<(), std::io::Error> {
         gs.map = gs.map.delete_dead();
         
         if !gs.map.player_exists() {
-            gs.runstate = RunState::GameOver
+            gs.runstate = RunState::GameOver;
+        }
+        
+        if !gs.map.monsters_exists() {
+            gs.runstate = RunState::PreRun;
         }
 
         // --- THE RENDER STEP ---
+        disable_raw_mode()?;
         gs.render();
     }
     disable_raw_mode()?;
-    
     Ok(())
 }
+
+// TODO add monsters AI 
+// TODO add monster name to log messages
+// TODO decide whether a version of map can be completed
+
+// TODO gold system
+// TODO increasing difficulty of levels
