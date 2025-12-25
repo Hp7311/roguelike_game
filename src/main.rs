@@ -9,6 +9,8 @@ mod map;
 mod entities;
 mod constants;
 
+use entities::MoveReturn;
+
 #[derive(Debug, PartialEq)]
 enum RunState {
     PreRun,
@@ -90,11 +92,16 @@ fn main() -> Result<(), std::io::Error> {
                 let key = get_keystroke();
                 match key {
                     'w' | 'a' | 's' | 'd' => {
-                        gs.map = gs.map.clear_log()
-                            .move_player(key);
-                            
-                        gs.runstate = RunState::PlayerTurn;
+                        gs.map = gs.map.clear_log();
+                        match gs.map.move_player(key) {
+                            MoveReturn::Failure => gs.runstate = RunState::MonsterTurn,
+                            MoveReturn::Success(themap) => {
+                                gs.map = themap;
+                                gs.runstate = RunState::PlayerTurn;
+                            },
+                        }  // fixes dealing damage when bumping against Wall BUT don't let PlayerTurn do more
                     },
+                    
                     'q' => { break },
                     'r' => gs.runstate = RunState::PreRun,
                     _ => {},
@@ -146,6 +153,7 @@ fn main() -> Result<(), std::io::Error> {
         
         gs.map = gs.map.delete_dead();
         
+        
         if !gs.map.player_exists() {
             gs.runstate = RunState::GameOver;
         }
@@ -164,10 +172,11 @@ fn main() -> Result<(), std::io::Error> {
     Ok(())
 }
 
-// TODO disable dealing damage to monsters when -> Wall
+// SOLVED disable dealing damage to monsters when -> Wall
 // TODO add monsters AI 
 // TODO add monster name to log messages
 // TODO decide whether a version of map can be completed
 
 // TODO gold system
 // TODO increasing difficulty of levels
+// remember to disable_raw_mode before rendering anything.

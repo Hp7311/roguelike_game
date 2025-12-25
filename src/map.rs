@@ -1,4 +1,4 @@
-use crate::entities::{Tile, MonsterType};
+use crate::entities::{Tile, MonsterType, MoveReturn};
 use crate::entities;
 use crate::constants;
 use rand::Rng;
@@ -87,7 +87,7 @@ impl Map {
         self.clone()
     }
     
-    pub fn move_player(&self, to: char) -> Self {
+    pub fn move_player(&self, to: char) -> MoveReturn {
         // moves player to a direction and returns new map
         
         let mut return_vec = self.0.clone();
@@ -112,6 +112,8 @@ impl Map {
                         if a != 0 && return_vec[a-1][i] == Tile::Floor {
                             return_vec[a][i] = Tile::Floor;
                             return_vec[a-1][i] = Tile::Player(player_hp);
+                        } else {
+                            return MoveReturn::Failure;
                         }
                     },
             
@@ -119,6 +121,8 @@ impl Map {
                         if i != 0 && return_vec[a][i-1] == Tile::Floor {
                             return_vec[a][i] = Tile::Floor;
                             return_vec[a][i-1] = Tile::Player(player_hp);
+                        } else {
+                            return MoveReturn::Failure;
                         }
                     },
             
@@ -126,6 +130,8 @@ impl Map {
                         if a != return_vec.len()-1 && return_vec[a+1][i] == Tile::Floor {
                             return_vec[a][i] = Tile::Floor;
                             return_vec[a+1][i] = Tile::Player(player_hp);
+                        } else {
+                            return MoveReturn::Failure;
                         }
                     },
             
@@ -133,6 +139,8 @@ impl Map {
                         if i != return_vec[0].len()-1 && return_vec[a][i+1] == Tile::Floor {
                             return_vec[a][i] = Tile::Floor;
                             return_vec[a][i+1] = Tile::Player(player_hp);
+                        } else {
+                            return MoveReturn::Failure;
                         }
                     },
             
@@ -141,7 +149,7 @@ impl Map {
             }
         }
         
-        Self (return_vec, self.1.clone())
+        MoveReturn::Success( Self (return_vec, self.1.clone()) )
     }
     
     pub fn handle_player(&self) -> Self {
@@ -294,6 +302,7 @@ impl Map {
             MonsterType { hp: 10, glyph: 'G', strength: 30 },  // goblin
             MonsterType { hp: 20, glyph: 'O', strength: 10 },  // orc
             MonsterType { hp: 15, glyph: 'E', strength: 15 },  // elf
+            MonsterType { hp: 50, glyph: 'D', strength: 50 },  // dalek
         ];
         
         let mut rng = rand::rng();
