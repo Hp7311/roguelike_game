@@ -1,19 +1,14 @@
-// provides Map
 use crate::entities::{Tile, MonsterType};
 use crate::entities;
 use crate::constants;
 use rand::Rng;
-use rand::seq::SliceRandom;
 use rand::prelude::IndexedRandom;
 use crossterm::cursor::{MoveToColumn, MoveTo};
 use crossterm::execute;
-use std::io::Write;
-use once_cell::sync::Lazy;
-use std::sync::Mutex;
 
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Map (Vec<Vec<Tile>>, String);
+pub struct Map (pub Vec<Vec<Tile>>, pub String);
 
 
 impl Map {
@@ -36,8 +31,8 @@ impl Map {
             for tile in inner {
                 let print_ch = match tile {
                     Tile::Wall => "# ".to_string(),
-                    Tile::Player(hp) => "@ ".to_string(),
-                    Tile::Monster(Type) => format!("{} ", Type.glyph),  // TODO add more
+                    Tile::Player(_) => "@ ".to_string(),
+                    Tile::Monster(monstype) => format!("{} ", monstype.glyph),
                     Tile::Floor => "- ".to_string(),
                 };
                 print!("{}", print_ch);
@@ -45,14 +40,22 @@ impl Map {
             println!();
         }
         
-        // prints log if any
-        /*execute!(
-            std::io::stdout(), MoveTo(0, 13)
-        ).unwrap();*/
-        
-        println!("{}", self.1);
-        //std::io::Stdout::flush().unwrap();
-        
+        self.print_logs()
+    }
+    
+    pub fn clear_log(&self) -> Self {
+        Self (self.0.clone(), String::new())
+    }
+    
+    pub fn print_logs(&self) {
+        println!("{}", self.1)
+    }
+    
+    pub fn add_to_log(&self, msg: &str) -> Self {
+        let mut logs = self.1.clone();
+        logs.push_str(msg);
+    
+        Self (self.0.clone(), logs)
     }
     
     fn get_player_hp(&self) -> i32 {
@@ -65,10 +68,6 @@ impl Map {
             }
         }
         panic!("No player");
-    }
-    
-    pub fn clear_log(&self) -> Self {
-        Self (self.0.clone(), String::new())
     }
     
     pub fn handle_monsters(&self) -> Self {
@@ -170,12 +169,24 @@ impl Map {
                         monster,
                         constants::PLAYER_STRENGTH,
                     );
-                    return_log.push_str(
-                        &format!(
-                            "You attacked {:?} of {} damage!\n",
-                            monster, constants::PLAYER_STRENGTH
-                        )
-                    );
+                    let (a, i) = monster;
+                    if let Tile::Monster(mtype) = return_vec[a][i] {
+                        if mtype.hp < 1 {
+                            return_log.push_str(
+                                &format!(
+                                    "You obliterated {:?}!\n",
+                                    monster
+                                )
+                            );
+                        } else {
+                            return_log.push_str(
+                                &format!(
+                                    "You attacked {:?} of {} damage!\n",
+                                    monster, constants::PLAYER_STRENGTH
+                                )
+                            );
+                        }
+                    }
                     
                 }
             }
@@ -200,9 +211,9 @@ impl Map {
                     Tile::Monster(monstertype) => {
                         if monstertype.hp < 1 {
                             return_vec[a][i] = Tile::Floor;
-                            return_log.push_str(
+                            /*return_log.push_str(
                                 &format!("You obliterated Monster at ({}, {})\n", a, i)
-                            );
+                            );*/
                         }
                     },
                     _ => {},
@@ -311,7 +322,7 @@ impl Map {
         
         match return_vec[v_x][v_y] {
             Tile::Player(hp) => {
-                if let Tile::Monster(monstertype) = return_vec[att_x][att_y] {
+                if let Tile::Monster(_) = return_vec[att_x][att_y] {
                     return_vec[v_x][v_y] = Tile::Player(
                         hp - strength as i32
                     );

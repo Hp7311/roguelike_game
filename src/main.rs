@@ -9,13 +9,14 @@ mod map;
 mod entities;
 mod constants;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum RunState {
     PreRun,
     AwaitingInput,
     PlayerTurn,
     MonsterTurn,
     GameOver,
+    GameWon,
 }
 
 #[derive(Debug)]
@@ -35,7 +36,6 @@ impl State {
         ).unwrap();
         
         self.map.draw();
-        // TODO add drawing player stats
     }
 
     fn run_monsters(&mut self) {
@@ -47,75 +47,100 @@ impl State {
     }
 }
 
-fn main() -> Result<(), std::io::Error> {
+fn get_keystroke() -> char {
+    let key: char;
+    loop {
+        if let Event::Key(event) = read().unwrap() {
+            if let KeyCode::Char(c) = event.code {
+                key = c;
+                break;
+            }
+        }
+    }
+    
+    key
+}
 
-    // --- INITIALIZATION ----
+fn main() -> Result<(), std::io::Error> {
     
     let mut gs = State {
         map: map::init_map(),
         runstate: RunState::PreRun,
     };
 
-    // --- CORE GAME LOOP ---
+    
     loop {
-        enable_raw_mode()?;
+        
         match gs.runstate {
+        
             RunState::PreRun => {
+                // re-initialise map
                 gs = State {
                     map: map::init_map(),
                     runstate: RunState::AwaitingInput,
                 };
             },
+            
             RunState::AwaitingInput => {
                 execute!(
                     stdout(),
                     MoveTo(0, 11)
                 ).unwrap();
-                let mut key = 'a';
-                loop {
-                    if let Event::Key(event) = read()? {
-                        if let KeyCode::Char(c) = event.code {
-                            key = c;
-                            break;
-                        }
-                    }
-                }
-                if key == 'q' { break }
+                
+                let key = get_keystroke();
                 match key {
                     'w' | 'a' | 's' | 'd' => {
-                        gs.map = gs.map.clear_log();
-                        gs.map = gs.map.move_player(key);
+                        gs.map = gs.map.clear_log()
+                            .move_player(key);
+                            
                         gs.runstate = RunState::PlayerTurn;
                     },
+                    'q' => { break },
+                    'r' => gs.runstate = RunState::PreRun,
                     _ => {},
                 }
             },
+            
             RunState::PlayerTurn => {
                 gs.run_player();
                 gs.runstate = RunState::MonsterTurn;
             },
+            
             RunState::MonsterTurn => {
                 gs.run_monsters();
                 gs.runstate = RunState::AwaitingInput;
             },
+            
             RunState::GameOver => {
-                println!("You died!");
+                gs.map = gs.map
+                    .clear_log()
+                    .add_to_log("You died!");
+                disable_raw_mode()?;
+                gs.map.print_logs();
+                enable_raw_mode()?;
                 
-                let mut key = 'a';
-                loop {
-                    if let Event::Key(event) = read()? {
-                        if let KeyCode::Char(c) = event.code {
-                            key = c;
-                            
-                        }
-                    }
-                    match key {
-                        'q' => break,
-                        'r' => gs.runstate = RunState::PreRun,
-                        _ => {},
-                    }
+                match get_keystroke() {
+                    'q' => { break },
+                    'r' => gs.runstate = RunState::PreRun,
+                    _ => {},
                 }
                 
+            },
+            
+            RunState::GameWon => {
+                gs.map = gs.map
+                    .clear_log()
+                    .add_to_log("You won the game!\nr for restart, q if quit.");
+                    
+                disable_raw_mode()?;
+                gs.map.print_logs();
+                enable_raw_mode()?;
+                
+                match get_keystroke() {
+                    'q' => { break },
+                    'r' => gs.runstate = RunState::PreRun,
+                    _ => {},
+                }
             },
         }
         
@@ -125,18 +150,21 @@ fn main() -> Result<(), std::io::Error> {
             gs.runstate = RunState::GameOver;
         }
         
-        if !gs.map.monsters_exists() {
-            gs.runstate = RunState::PreRun;
+        if !gs.map.monsters_exists() && gs.runstate == RunState::AwaitingInput {
+            gs.runstate = RunState::GameWon;
         }
 
-        // --- THE RENDER STEP ---
+        
         disable_raw_mode()?;
-        gs.render();
+        gs.render();  // prints log here
+        enable_raw_mode()?;
     }
+    
     disable_raw_mode()?;
     Ok(())
 }
 
+// TODO disable dealing damage to monsters when -> Wall
 // TODO add monsters AI 
 // TODO add monster name to log messages
 // TODO decide whether a version of map can be completed
