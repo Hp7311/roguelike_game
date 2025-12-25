@@ -103,7 +103,7 @@ fn main() -> Result<(), std::io::Error> {
                     },
                     
                     'q' => { break },
-                    'r' => gs.runstate = RunState::PreRun,
+                    'r' => gs.runstate = RunState::PreRun,  // TODO delete when not debuggin
                     _ => {},
                 }
             },
@@ -121,7 +121,7 @@ fn main() -> Result<(), std::io::Error> {
             RunState::GameOver => {
                 gs.map = gs.map
                     .clear_log()
-                    .add_to_log("You died!");
+                    .add_to_log("You died!\nq to quit, r to restart.");
                 disable_raw_mode()?;
                 gs.map.print_logs();
                 enable_raw_mode()?;
@@ -154,7 +154,7 @@ fn main() -> Result<(), std::io::Error> {
         gs.map = gs.map.delete_dead();
         
         
-        if !gs.map.player_exists() {
+        if !gs.map.player_exists() && !(gs.runstate == RunState::PreRun) {
             gs.runstate = RunState::GameOver;
         }
         
@@ -180,3 +180,4 @@ fn main() -> Result<(), std::io::Error> {
 // TODO gold system
 // TODO increasing difficulty of levels
 // remember to disable_raw_mode before rendering anything.
+// remember to change how to avoid dealing damage to monsters when changing PlayerTurn

@@ -20,6 +20,7 @@ pub enum MoveReturn {
     Success(Map),
     Failure,
 }
+
 pub fn in_range(source: (usize, usize), target: (usize, usize)) -> bool {
     let (source_x, source_y) = source;
     let (target_x, target_y) = target;

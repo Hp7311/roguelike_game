@@ -20,7 +20,10 @@ impl Map {
             MoveTo(0, 0)
         ).unwrap();
         
-        println!("Your HP: {}", self.get_player_hp());
+        match self.get_player_hp() {
+            Some(urhp) => println!("Your HP: {}", urhp),
+            None => println!("You're dead"),
+        }
         
         // prints map
         for inner in &self.0 {
@@ -43,6 +46,7 @@ impl Map {
         self.print_logs()
     }
     
+    // these 3 functions mainly for main.rs use
     pub fn clear_log(&self) -> Self {
         Self (self.0.clone(), String::new())
     }
@@ -58,33 +62,71 @@ impl Map {
         Self (self.0.clone(), logs)
     }
     
-    fn get_player_hp(&self) -> i32 {
+    fn get_player_hp(&self) -> Option<i32> {
     
         for inner in self.0.clone() {
             for tile in inner {
                 if let Tile::Player(hp) = tile {
-                    return hp
+                    return Some(hp)
                 }
             }
         }
-        panic!("No player");
+        
+        None
+        
     }
     
     pub fn handle_monsters(&self) -> Self {
-        /*let return_vec = self.clone().0;
+        let mut return_vec = self.0.clone();
+        let mut return_log = self.1.clone();
         let mut monster_list = Vec::new();
+        let mut player_pos = None;
         
         for (a, inner) in return_vec.iter().enumerate() {
             for (i, tile) in inner.iter().enumerate() {
-                if let Tile::Monster(monstertype) = tile {
-                    monster_list.push((
-                        (a, i), monstertype
-                    ))
+                match tile {
+                    Tile::Monster(monstertype) => {
+                        monster_list.push(
+                            ( (a, i), monstertype.strength )
+                        );
+                    },
+                    
+                    Tile::Player(_) => player_pos = Some((a, i)),
+                    _ => {},
                 }
             }
-        }*/
+        }
         
-        self.clone()
+        for monster in monster_list {
+            if let Some(player) = player_pos {
+            
+                if entities::in_range(monster.0, player) {
+                
+                    return_vec = Map (return_vec, return_log.clone()).attack(monster.0, player, monster.1);
+                    
+                    if let Tile::Player(playerhp) = return_vec[player.0][player.1] {
+                        if playerhp < 1 {
+                            return_log.push_str(
+                                &format!(
+                                    "Monster at {:?} obliterated you.\n",
+                                    monster.0
+                                )
+                            );
+                            break;
+                        } else {
+                            return_log.push_str(
+                                &format!(
+                                    "Monster at {:?} dealt {} damage to you.\n",
+                                    monster.0, monster.1
+                                )
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        
+        Self (return_vec, return_log)
     }
     
     pub fn move_player(&self, to: char) -> MoveReturn {
@@ -172,7 +214,7 @@ impl Map {
         if let Some(player) = player_pos {
             for monster in monster_list {
                 if entities::in_range(player, monster) {
-                    return_vec = self.attack(
+                    return_vec = Map (return_vec, return_log.clone()).attack(
                         player,
                         monster,
                         constants::PLAYER_STRENGTH,
@@ -205,7 +247,7 @@ impl Map {
     
     pub fn delete_dead(&self) -> Self {
         let mut return_vec = self.0.clone();
-        let mut return_log = self.1.clone();
+        let return_log = self.1.clone();
         
         for (a, inner) in self.0.clone().iter().enumerate() {
             for (i, tile) in inner.iter().enumerate() {
@@ -213,15 +255,11 @@ impl Map {
                     Tile::Player(hp) => {
                         if *hp < 1 {
                             return_vec[a][i] = Tile::Floor;
-                            return_log.push_str("You died!!\n")
                         }
                     },
                     Tile::Monster(monstertype) => {
                         if monstertype.hp < 1 {
                             return_vec[a][i] = Tile::Floor;
-                            /*return_log.push_str(
-                                &format!("You obliterated Monster at ({}, {})\n", a, i)
-                            );*/
                         }
                     },
                     _ => {},
@@ -291,7 +329,7 @@ impl Map {
         let mut return_vec = self.0.clone();
         let x = rand::rng().random_range(..return_vec.len());
         let y = rand::rng().random_range(..return_vec[0].len());
-        return_vec[x][y] = Tile::Player(100);
+        return_vec[x][y] = Tile::Player(constants::PLAYER_HEALTH as i32);
         
         Self (return_vec, self.1.clone())
     }
@@ -299,9 +337,9 @@ impl Map {
     fn add_monsters(&self, num: u32) -> Self {
     
         let monster_types = vec![
-            MonsterType { hp: 10, glyph: 'G', strength: 30 },  // goblin
+            MonsterType { hp: 10, glyph: 'G', strength: 20 },  // goblin
             MonsterType { hp: 20, glyph: 'O', strength: 10 },  // orc
-            MonsterType { hp: 15, glyph: 'E', strength: 15 },  // elf
+            MonsterType { hp: 15, glyph: 'E', strength: 5 },  // elf
             MonsterType { hp: 50, glyph: 'D', strength: 50 },  // dalek
         ];
         
