@@ -169,12 +169,17 @@ fn main() -> Result<(), std::io::Error> {
     }
     
     disable_raw_mode()?;
+    execute!(
+        stdout(),
+        terminal::Clear(terminal::ClearType::All),
+    ).unwrap();
     Ok(())
 }
 
 // SOLVED disable dealing damage to monsters when -> Wall
-// TODO add monsters AI 
-// TODO add monster name to log messages
+// SOLVED add monsters AI 
+// SOLVED add monster name to log messages
+// TODO player has bonuses aganst certain monsters
 // TODO decide whether a version of map can be completed
 
 // TODO gold system

@@ -87,7 +87,7 @@ impl Map {
                 match tile {
                     Tile::Monster(monstertype) => {
                         monster_list.push(
-                            ( (a, i), monstertype.strength )
+                            ( (a, i), monstertype.clone() )
                         );
                     },
                     
@@ -102,22 +102,24 @@ impl Map {
             
                 if entities::in_range(monster.0, player) {
                 
-                    return_vec = Map (return_vec, return_log.clone()).attack(monster.0, player, monster.1);
+                    return_vec = Map (return_vec, return_log.clone()).attack(
+                        monster.0, player, monster.1.strength
+                    );
                     
                     if let Tile::Player(playerhp) = return_vec[player.0][player.1] {
                         if playerhp < 1 {
                             return_log.push_str(
                                 &format!(
-                                    "Monster at {:?} obliterated you.\n",
-                                    monster.0
+                                    "{} at {:?} obliterated you.\n",
+                                    monster.1.name, monster.0
                                 )
                             );
                             break;
                         } else {
                             return_log.push_str(
                                 &format!(
-                                    "Monster at {:?} dealt {} damage to you.\n",
-                                    monster.0, monster.1
+                                    "{} at {:?} dealt {} damage to you.\n",
+                                    monster.1.name, monster.0, monster.1.strength
                                 )
                             );
                         }
@@ -205,12 +207,15 @@ impl Map {
                     player_pos = Some((a, i));
                 }
                 if let Tile::Monster(_) = tile {
-                    monster_list.push((a, i));
+                    monster_list.push(
+                        (a, i)
+                    );
                 }
             }
         }
         
         let mut return_log = self.1.clone();
+        
         if let Some(player) = player_pos {
             for monster in monster_list {
                 if entities::in_range(player, monster) {
@@ -220,19 +225,22 @@ impl Map {
                         constants::PLAYER_STRENGTH,
                     );
                     let (a, i) = monster;
-                    if let Tile::Monster(mtype) = return_vec[a][i] {
+                    
+                    if let Tile::Monster(mtype) = &return_vec[a][i] {
+                    
                         if mtype.hp < 1 {
                             return_log.push_str(
                                 &format!(
-                                    "You obliterated {:?}!\n",
-                                    monster
+                                    "You obliterated {} at {:?}!\n",
+                                    mtype.name, monster
                                 )
                             );
+                            
                         } else {
                             return_log.push_str(
                                 &format!(
-                                    "You attacked {:?} of {} damage!\n",
-                                    monster, constants::PLAYER_STRENGTH
+                                    "You attacked {} at {:?} of {} damage!\n",
+                                    mtype.name, monster, constants::PLAYER_STRENGTH
                                 )
                             );
                         }
@@ -336,12 +344,7 @@ impl Map {
     
     fn add_monsters(&self, num: u32) -> Self {
     
-        let monster_types = vec![
-            MonsterType { hp: 10, glyph: 'G', strength: 20 },  // goblin
-            MonsterType { hp: 20, glyph: 'O', strength: 10 },  // orc
-            MonsterType { hp: 15, glyph: 'E', strength: 5 },  // elf
-            MonsterType { hp: 50, glyph: 'D', strength: 50 },  // dalek
-        ];
+        let monster_types = entities::get_monsters();
         
         let mut rng = rand::rng();
     
@@ -367,7 +370,7 @@ impl Map {
         let (att_x, att_y) = attacker;
         let (v_x, v_y) = victum;
         
-        match return_vec[v_x][v_y] {
+        match &return_vec[v_x][v_y] {
             Tile::Player(hp) => {
                 if let Tile::Monster(_) = return_vec[att_x][att_y] {
                     return_vec[v_x][v_y] = Tile::Player(
@@ -382,6 +385,7 @@ impl Map {
                             hp: monstertype.hp - constants::PLAYER_STRENGTH as i32,
                             glyph: monstertype.glyph,
                             strength: monstertype.strength,
+                            name: monstertype.name.clone(),
                         }
                     )
                 }
@@ -416,9 +420,15 @@ pub fn init_map() -> Map {
         }
     }
     
-    Map (return_vec, String::new())
-        .dig_floors()
-        .add_player()
-        .add_monsters(constants::MONSTER_NUMBER)
+    loop {
+        let return_map = Map (return_vec.clone(), String::new())
+            .dig_floors()
+            .add_player()
+            .add_monsters(constants::MONSTER_NUMBER);
+        if entities::check_map_valid(return_map.clone()) {
+            return return_map;
+        }
+    }
+    
     
 }
