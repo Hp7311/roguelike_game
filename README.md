@@ -14,7 +14,7 @@ cargo run
 `init.py` should be run only when you just cloned the repo.
 
 ## Adjusting stats
-map's width and length: `constants.rs`.
-player's health: `constants.rs`.
-number of monsters: `constants.rs`.
+map's width and length: `constants.rs`.  
+player's health: `constants.rs`.  
+number of monsters: `constants.rs`.  
 vector of monsters to choose from: `entities::mod.rs` in `get_monsters`.
