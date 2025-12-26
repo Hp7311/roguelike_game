@@ -21,9 +21,12 @@ impl Map {
         ).unwrap();
         
         match self.get_player_hp() {
-            Some(urhp) => println!("Your HP: {}", urhp),
+            Some(urhp) => println!("Your HP:   {}", urhp),
             None => println!("You're dead"),
         }
+        
+        // prints gold amount
+        println!("Your gold: {}", entities::get_gold());
         
         // prints map
         for inner in &self.0 {
@@ -103,7 +106,7 @@ impl Map {
                 if entities::in_range(monster.0, player) {
                 
                     return_vec = Map (return_vec, return_log.clone()).attack(
-                        monster.0, player, monster.1.strength
+                        monster.0, player
                     );
                     
                     if let Tile::Player(playerhp) = return_vec[player.0][player.1] {
@@ -222,7 +225,6 @@ impl Map {
                     return_vec = Map (return_vec, return_log.clone()).attack(
                         player,
                         monster,
-                        constants::PLAYER_STRENGTH,
                     );
                     let (a, i) = monster;
                     
@@ -235,12 +237,13 @@ impl Map {
                                     mtype.name, monster
                                 )
                             );
+                            entities::add_to_gold(mtype.gold).unwrap();
                             
                         } else {
                             return_log.push_str(
                                 &format!(
                                     "You attacked {} at {:?} of {} damage!\n",
-                                    mtype.name, monster, constants::PLAYER_STRENGTH
+                                    mtype.name, monster, mtype.player_strength_to
                                 )
                             );
                         }
@@ -364,31 +367,35 @@ impl Map {
         Self (return_vec, self.1.clone())
     }
     
-    fn attack(&self, attacker: (usize, usize), victum: (usize, usize), strength: u32) -> Vec<Vec<Tile>> {
+    fn attack(&self, attacker: (usize, usize), victum: (usize, usize)) -> Vec<Vec<Tile>> {
         let mut return_vec = self.0.clone();
         
         let (att_x, att_y) = attacker;
         let (v_x, v_y) = victum;
         
         match &return_vec[v_x][v_y] {
+        
             Tile::Player(hp) => {
-                if let Tile::Monster(_) = return_vec[att_x][att_y] {
+                if let Tile::Monster(monstertype) = &return_vec[att_x][att_y] {
                     return_vec[v_x][v_y] = Tile::Player(
-                        hp - strength as i32
+                        hp - monstertype.strength as i32
                     );
                 }
             },
+            
             Tile::Monster(monstertype) => {
-                if let Tile::Player(_) = return_vec[att_x][att_y] {
-                    return_vec[v_x][v_y] = Tile::Monster(
-                        MonsterType {
-                            hp: monstertype.hp - constants::PLAYER_STRENGTH as i32,
-                            glyph: monstertype.glyph,
-                            strength: monstertype.strength,
-                            name: monstertype.name.clone(),
-                        }
-                    )
-                }
+            
+                return_vec[v_x][v_y] = Tile::Monster (
+                    MonsterType {
+                        gold:               monstertype.gold,
+                        player_strength_to: monstertype.player_strength_to,
+                        hp:                 monstertype.hp - monstertype.player_strength_to as i32,
+                        glyph:              monstertype.glyph,
+                        strength:           monstertype.strength,
+                        name:               monstertype.name.clone(),
+                    }
+                );
+                
             },
             _ => {},
         }
@@ -409,17 +416,20 @@ pub fn init_map() -> Map {
       |
       -
     */
-    const LENGTH: i32 = 10;
-    const WIDTH: i32 = 10;
+    
+    let length = constants::LENGTH;
+    let width  = constants::WIDTH;
     let mut return_vec = Vec::new();
     
-    for inner_vec in 0..WIDTH {
+    for inner_vec in 0..width {
         return_vec.push(Vec::new());
-        for _ in 0..LENGTH {
+        
+        for _ in 0..length {
             return_vec[inner_vec as usize].push(Tile::Wall);
         }
     }
     
+    // validate if map can be completed
     loop {
         let return_map = Map (return_vec.clone(), String::new())
             .dig_floors()

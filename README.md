@@ -1,18 +1,20 @@
-# Status
+## Status
 In development.
 
-# Description
+## Description
 Roguelike game in ASCII.
 
-# Usage
+## Usage
 ```bash
 git clone https://github.com/Hp7311/roguelike_game.git
 cd roguelike_game
+python3 init.py
 cargo run
 ```
+`init.py` should be run only when you just cloned the repo.
 
-# Adjusting stats
-player's strength: `constants.rs` #1
-player's health: `constants.rs` #2
-number of monsters: `constants.rs` #3
-vector of monsters to choose from: `map.rs` in `Map::add_monsters`
+## Adjusting stats
+map's width and length: `constants.rs`.
+player's health: `constants.rs`.
+number of monsters: `constants.rs`.
+vector of monsters to choose from: `entities::mod.rs` in `get_monsters`.

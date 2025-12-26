@@ -86,7 +86,7 @@ fn main() -> Result<(), std::io::Error> {
             RunState::AwaitingInput => {
                 execute!(
                     stdout(),
-                    MoveTo(0, 11)
+                    MoveTo(0, (constants::WIDTH + 2).try_into().unwrap())
                 ).unwrap();
                 
                 let key = get_keystroke();
@@ -179,10 +179,13 @@ fn main() -> Result<(), std::io::Error> {
 // SOLVED disable dealing damage to monsters when -> Wall
 // SOLVED add monsters AI 
 // SOLVED add monster name to log messages
-// TODO player has bonuses aganst certain monsters
-// TODO decide whether a version of map can be completed
+// SOLVED player has bonuses aganst certain monsters
+// SOLVED decide whether a version of map can be completed
 
-// TODO gold system
+// SOLVED gold system
+// TODO monster moves toward player
+// TODO player refills HP
 // TODO increasing difficulty of levels
+// TODO dynamic amount of monsters accordiing to map sizs
 // remember to disable_raw_mode before rendering anything.
 // remember to change how to avoid dealing damage to monsters when changing PlayerTurn
