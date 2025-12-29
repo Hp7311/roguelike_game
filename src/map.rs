@@ -5,6 +5,7 @@ use rand::Rng;
 use rand::prelude::IndexedRandom;
 use crossterm::cursor::{MoveToColumn, MoveTo};
 use crossterm::execute;
+use log::{info, warn};
 
 
 #[derive(Debug, Clone, PartialEq)]
@@ -100,10 +101,13 @@ impl Map {
             }
         }
         
+        info!("Made it to front of moves_monsters");
+        return_vec = entities::moves_monsters(return_vec);
+        
         for monster in monster_list {
-            if let Some(player) = player_pos {
+            if let Some(player) = player_pos
             
-                if entities::in_range(monster.0, player) {
+                && entities::in_range(monster.0, player, 2) {
                 
                     return_vec = Map (return_vec, return_log.clone()).attack(
                         monster.0, player
@@ -128,7 +132,6 @@ impl Map {
                         }
                     }
                 }
-            }
         }
         
         Self (return_vec, return_log)
@@ -149,9 +152,9 @@ impl Map {
             }
         }
         
-        if let Some((a, i)) = player_pos {
+        if let Some((a, i)) = player_pos
             
-            if let Tile::Player(player_hp) = return_vec[a][i] {
+            && let Tile::Player(player_hp) = return_vec[a][i] {
             
                 match to {
         
@@ -194,7 +197,6 @@ impl Map {
                     _ => {},
                 }
             }
-        }
         
         MoveReturn::Success( Self (return_vec, self.1.clone()) )
     }
@@ -221,7 +223,7 @@ impl Map {
         
         if let Some(player) = player_pos {
             for monster in monster_list {
-                if entities::in_range(player, monster) {
+                if entities::in_range(player, monster, 3) {
                     return_vec = Map (return_vec, return_log.clone()).attack(
                         player,
                         monster,

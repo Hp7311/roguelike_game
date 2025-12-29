@@ -61,7 +61,7 @@ fn can_reach(map: Vec<Vec<Tile>>, start: (usize, usize), target: (usize, usize))
             let shifted_y = exploring_y as isize + shift_index_y;
             
             // if surrounding tile is target, YES
-            if (shifted_y, shifted_y) == target {
+            if (shifted_x, shifted_y) == target {
                 return true;
             }
             

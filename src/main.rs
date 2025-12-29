@@ -3,6 +3,9 @@ use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 use crossterm::execute;
 use crossterm::terminal;
 use crossterm::cursor::MoveTo;
+use log::info;
+use log::LevelFilter;
+use simple_logger::SimpleLogger;
 use std::io::stdout;
 
 mod map;
@@ -50,21 +53,29 @@ impl State {
 }
 
 fn get_keystroke() -> char {
+    enable_raw_mode().unwrap();
+    
     let key: char;
     loop {
-        if let Event::Key(event) = read().unwrap() {
-            if let KeyCode::Char(c) = event.code {
+        if let Event::Key(event) = read().unwrap()
+            && let KeyCode::Char(c) = event.code {
                 key = c;
                 break;
             }
-        }
     }
+    
+    disable_raw_mode().unwrap();
     
     key
 }
 
+
 fn main() -> Result<(), std::io::Error> {
     
+    SimpleLogger::new()
+        .with_level(LevelFilter::Off)
+        .init()
+        .unwrap();
     let mut gs = State {
         map: map::init_map(),
         runstate: RunState::PreRun,
@@ -72,6 +83,7 @@ fn main() -> Result<(), std::io::Error> {
 
     
     loop {
+        info!("Current runstate: {:?}", gs.runstate);
         
         match gs.runstate {
         
@@ -122,9 +134,8 @@ fn main() -> Result<(), std::io::Error> {
                 gs.map = gs.map
                     .clear_log()
                     .add_to_log("You died!\nq to quit, r to restart.");
-                disable_raw_mode()?;
+                
                 gs.map.print_logs();
-                enable_raw_mode()?;
                 
                 match get_keystroke() {
                     'q' => { break },
@@ -161,17 +172,15 @@ fn main() -> Result<(), std::io::Error> {
         if !gs.map.monsters_exists() && gs.runstate == RunState::AwaitingInput {
             gs.runstate = RunState::GameWon;
         }
-
         
-        disable_raw_mode()?;
         gs.render();  // prints log here
-        enable_raw_mode()?;
+        //std::thread::sleep(std::time::Duration::from_secs(2));
     }
     
-    disable_raw_mode()?;
     execute!(
         stdout(),
         terminal::Clear(terminal::ClearType::All),
+        MoveTo(0, 0)
     ).unwrap();
     Ok(())
 }
@@ -184,8 +193,12 @@ fn main() -> Result<(), std::io::Error> {
 
 // SOLVED gold system
 // TODO monster moves toward player
+// TODO arrow keys to move
+// TODO health bar, level system, things to do with gold etc.
 // TODO player refills HP
 // TODO increasing difficulty of levels
-// TODO dynamic amount of monsters accordiing to map sizs
+// TODO dynamic amount of monsters accordiing to map size
+// TODO FOV 
+// TODO more diversity of tiles. Bonus tiles for HP, etc.
 // remember to disable_raw_mode before rendering anything.
 // remember to change how to avoid dealing damage to monsters when changing PlayerTurn

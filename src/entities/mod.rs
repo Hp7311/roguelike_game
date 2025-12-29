@@ -1,8 +1,19 @@
 mod check_map_valid;
+mod moves_monsters;
 
+pub use crate::entities::moves_monsters::moves_monsters;
 pub use crate::entities::check_map_valid::check_map_valid;
+
 use crate::map::Map;
 use std::fs;
+
+#[derive(Debug, Clone, Copy)]
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Tile {
@@ -28,17 +39,11 @@ pub enum MoveReturn {
     Failure,
 }
 
-pub fn in_range(source: (usize, usize), target: (usize, usize)) -> bool {
+pub fn in_range(source: (usize, usize), target: (usize, usize), range: usize) -> bool {
     let (source_x, source_y) = source;
     let (target_x, target_y) = target;
     
-    if source_x.abs_diff(target_x) < 3 &&
-        source_y.abs_diff(target_y) < 3 
-    {
-        true
-    } else {
-        false
-    }
+    source_x.abs_diff(target_x) < range && source_y.abs_diff(target_y) < range
 }
 
 
