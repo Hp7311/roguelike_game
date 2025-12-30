@@ -6,14 +6,8 @@ pub use crate::entities::check_map_valid::check_map_valid;
 
 use crate::map::Map;
 use std::fs;
+use crate::constants;
 
-#[derive(Debug, Clone, Copy)]
-pub enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-}
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Tile {
@@ -90,4 +84,29 @@ pub fn get_gold() -> u32 {
             0
         },
     }
+}
+
+
+pub fn print_hp(hp: i32) {
+    let divide = (hp as f32) / (constants::PLAYER_HEALTH as f32);
+    
+    match divide {
+        0.0        => println!("{}", get_health_bar_func(0)),
+        0.0..0.1   => println!("{}", get_health_bar_func(1)),
+        0.1..0.2   => println!("{}", get_health_bar_func(2)),
+        0.2..0.3   => println!("{}", get_health_bar_func(3)),
+        0.3..0.4   => println!("{}", get_health_bar_func(4)),
+        0.4..0.5   => println!("{}", get_health_bar_func(5)),
+        0.5..0.6   => println!("{}", get_health_bar_func(6)),
+        0.6..0.7   => println!("{}", get_health_bar_func(7)),
+        0.7..0.8   => println!("{}", get_health_bar_func(8)),
+        0.8..0.9   => println!("{}", get_health_bar_func(9)),
+        0.9..=1.0  => println!("{}", get_health_bar_func(10)),
+        _          => panic!("Player health more than maxmum health"),
+    }
+}
+
+
+fn get_health_bar_func(remain: usize) -> String {
+    format!("Health: [{}{}]", "#".repeat(remain), "-".repeat(10 - remain))
 }

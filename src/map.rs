@@ -5,7 +5,7 @@ use rand::Rng;
 use rand::prelude::IndexedRandom;
 use crossterm::cursor::{MoveToColumn, MoveTo};
 use crossterm::execute;
-use log::{info, warn};
+use log::info;
 
 
 #[derive(Debug, Clone, PartialEq)]
@@ -22,8 +22,8 @@ impl Map {
         ).unwrap();
         
         match self.get_player_hp() {
-            Some(urhp) => println!("Your HP:   {}", urhp),
-            None => println!("You're dead"),
+            Some(urhp) => entities::print_hp(urhp),
+            None       => entities::print_hp(0),
         }
         
         // prints gold amount

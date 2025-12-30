@@ -1,7 +1,6 @@
 /// moves monsters using scent map
 use crate::entities::Tile;
 use std::collections::VecDeque;
-use log::{info, warn, debug};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 struct Cord<T> {
@@ -21,7 +20,7 @@ pub fn moves_monsters(map: Vec<Vec<Tile>>) -> Vec<Vec<Tile>> {
         .map(|item| {
             item.iter()
                 .map(|tile| {
-                    if let Some(num) = tile { return *num } else { return 1000 } // not stable
+                    if let Some(num) = tile { *num } else { 1000 } // not stable
                 })  // relies on d_map correct
                 .collect::<Vec<_>>()
         })
@@ -83,7 +82,7 @@ pub fn moves_monsters(map: Vec<Vec<Tile>>) -> Vec<Vec<Tile>> {
 
 
 
-fn get_monster_cords(map: &Vec<Vec<Tile>>) -> Vec<Cord<usize>> {
+fn get_monster_cords(map: &[Vec<Tile>]) -> Vec<Cord<usize>> {
     map.iter()
         .enumerate()
         .flat_map(|(x, row)| {
@@ -147,7 +146,7 @@ fn get_map(map: Vec<Vec<Tile>>) -> Vec<Vec<Option<u32>>> {
             if let Some(inner) = d_map.get(shifted_cords.x) {
                 if let Some(tile) = inner.get(shifted_cords.y) {
                 
-                    if let Some(_) = tile {
+                    if tile.is_some() {
                         continue;
                     }
                 } 
@@ -160,8 +159,8 @@ fn get_map(map: Vec<Vec<Tile>>) -> Vec<Vec<Option<u32>>> {
             }
             
             // if tile in map And not blocked, push the exploring tile and assign it to a num
-            if let Some(inner) = map.get(shifted_cords.x) {
-                if let Some(tile) = inner.get(shifted_cords.y) {
+            if let Some(inner) = map.get(shifted_cords.x)
+                && let Some(tile) = inner.get(shifted_cords.y) {
                     
                     // if the flowing tile is Floor or Monster
                     if *tile == Tile::Floor || matches!(*tile, Tile::Monster(_)) {
@@ -169,7 +168,6 @@ fn get_map(map: Vec<Vec<Tile>>) -> Vec<Vec<Option<u32>>> {
                         d_map[shifted_cords.x][shifted_cords.y] = Some(mark_num);
                     }
                 }
-            }
         }
     }
     
