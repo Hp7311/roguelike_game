@@ -192,13 +192,15 @@ fn main() -> Result<(), std::io::Error> {
 // SOLVED decide whether a version of map can be completed
 
 // SOLVED gold system
-// TODO monster moves toward player
+// SOLVED monster moves toward player
+// TODO monsters have different speed
 // TODO arrow keys to move
 // TODO health bar, level system, things to do with gold etc.
 // TODO player refills HP
 // TODO increasing difficulty of levels
-// TODO dynamic amount of monsters accordiing to map size
-// TODO FOV 
+// TODO dynamic amount of monsters according to map size
+// TODO FOV for player
+// TODO better UI
 // TODO more diversity of tiles. Bonus tiles for HP, etc.
-// remember to disable_raw_mode before rendering anything.
-// remember to change how to avoid dealing damage to monsters when changing PlayerTurn
+// ALWAYS improve reusability
+// for now, all monsters move towards player

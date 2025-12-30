@@ -3,11 +3,12 @@ use crate::entities::Tile;
 use std::collections::VecDeque;
 use log::{info, warn, debug};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 struct Cord<T> {
     x: T,
     y: T,
 }
+
 
 pub fn moves_monsters(map: Vec<Vec<Tile>>) -> Vec<Vec<Tile>> {
     let mut return_vec = map.clone();
@@ -15,6 +16,7 @@ pub fn moves_monsters(map: Vec<Vec<Tile>>) -> Vec<Vec<Tile>> {
     let monster_list = get_monster_cords(&map);
     //info!("{:?}", d_map);
     
+    // unwrap d_map of Option
     let d_map = d_map.iter()
         .map(|item| {
             item.iter()
@@ -29,9 +31,10 @@ pub fn moves_monsters(map: Vec<Vec<Tile>>) -> Vec<Vec<Tile>> {
     for monster in monster_list {
     
         let mut nswe_cords = Vec::new();
-        // NSWE
+        
+        // get NSWE cords
         for (mv_x, mv_y) in [(0, 1), (0, -1isize), (1, 0), (-1isize, 0)] {
-            // monster looks
+            // monster looks around it
             let shifted_cords = Cord {
                 x: monster.x as isize + mv_x,
                 y: monster.y as isize + mv_y,
@@ -42,32 +45,32 @@ pub fn moves_monsters(map: Vec<Vec<Tile>>) -> Vec<Vec<Tile>> {
                 continue;
             }
             
-            let shifted_cords = Cord {
+            nswe_cords.push( Cord {
                 x: shifted_cords.x as usize,
                 y: shifted_cords.y as usize,
-            };
-            
-            // scent number, Cord
-            nswe_cords.push(
-                (d_map[shifted_cords.x][shifted_cords.y], shifted_cords)
-            );
-        
+            });
         }
         
-        let mut smallest = nswe_cords[0].0;
-        let mut move_to = nswe_cords[0].1;
+        // get smallest on scent map
+        let mut smallest = d_map[nswe_cords[0].x][nswe_cords[0].y];
+        let mut move_to: Cord<usize> = nswe_cords[0];
         
         nswe_cords.iter()
-            .for_each(|(num, cord)| {
-                if *num < smallest {
-                    smallest = *num;
-                    move_to = *cord;
+            .for_each(|cord| {
+                if d_map[cord.x][cord.y] < smallest {
+                    smallest = d_map[cord.x][cord.y];
+                    move_to  = *cord;
                 }
             });
         
-        info!("Monster moving to {:?} of {}", move_to, smallest);
+        // if about to move on another monster/player
+        if matches!(return_vec[move_to.x][move_to.y], Tile::Player(_))
+            || matches!(return_vec[move_to.x][move_to.y], Tile::Monster(_)) {
+            
+            continue;
+        }
         
-        // move monster           
+        // move monster
         return_vec[move_to.x][move_to.y]
             = return_vec[monster.x][monster.y].clone();
             
