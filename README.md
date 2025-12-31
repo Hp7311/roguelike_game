@@ -1,5 +1,5 @@
 ## Status
-In development.
+In development. Cannot be used
 
 ## Description
 Roguelike game in ASCII.

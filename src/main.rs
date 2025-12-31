@@ -1,209 +1,23 @@
-use crossterm::event::{read, Event, KeyCode};
-use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
-use crossterm::execute;
-use crossterm::terminal;
-use crossterm::cursor::MoveTo;
-use log::info;
-use log::LevelFilter;
-use simple_logger::SimpleLogger;
-use std::io::stdout;
+/// entry point
 
-mod map;
+mod state;
 mod entities;
+mod utils;
 mod constants;
 
-use entities::MoveReturn;
-
-#[derive(Debug, PartialEq)]
-enum RunState {
-    PreRun,
-    AwaitingInput,
-    PlayerTurn,
-    MonsterTurn,
-    GameOver,
-    GameWon,
-}
-
-#[derive(Debug)]
-struct State {
-    // Map (Vec<Vec<Tile>>)
-    // Tile enum: Wall, Floor, Player, Monster
-    map: map::Map,
-    
-    runstate: RunState,
-}
-
-impl State {
-    fn render(&self) {
-        execute!(
-            stdout(),
-            terminal::Clear(terminal::ClearType::All),
-        ).unwrap();
-        
-        self.map.draw();
-    }
-
-    fn run_monsters(&mut self) {
-        self.map.handle_monsters();
-    }
-    
-    fn run_player(&mut self) {
-        self.map.handle_player();
-    }
-}
-
-fn get_keystroke() -> char {
-    enable_raw_mode().unwrap();
-    
-    let key: char;
-    loop {
-        if let Event::Key(event) = read().unwrap() {
-            match event.code {
-                KeyCode::Up => {
-                    key = 'w';
-                    break;
-                },
-                KeyCode::Down => {
-                    key = 's';
-                    break;
-                },
-                KeyCode::Left => {
-                    key = 'a';
-                    break;
-                },
-                KeyCode::Right => {
-                    key = 'd';
-                    break;
-                },
-                KeyCode::Char(c) if matches!(c, 'w' | 's' | 'a' | 'd' | 'q' | 'r') => {
-                    key = c;
-                    break;
-                },
-                _ => {},
-            }
-        }
-    }
-    
-    disable_raw_mode().unwrap();
-    
-    key
-}
+use state::State;
 
 
 fn main() -> Result<(), std::io::Error> {
     
-    SimpleLogger::new()
-        //.with_level(LevelFilter::Off)
-        .init()
-        .expect("Error init logger");
-        
-    let mut gs = State {
-        map: map::init_map(),
-        runstate: RunState::PreRun,
-    };
-
-    
-    loop {
-        info!("Current runstate: {:?}", gs.runstate);
-        
-        match gs.runstate {
-        
-            RunState::PreRun => {
-                // re-initialise map
-                gs = State {
-                    map: map::init_map(),
-                    runstate: RunState::AwaitingInput,
-                };
-            },
-            
-            RunState::AwaitingInput => {
-                execute!(
-                    stdout(),
-                    MoveTo(0, (constants::WIDTH + 2).try_into().unwrap())
-                )?;
-                
-                let key = get_keystroke();
-                match key {
-                    'w' | 'a' | 's' | 'd' => {
-                        gs.map.clear_log();
-                        match gs.map.move_player(key) {
-                            MoveReturn::Failure => gs.runstate = RunState::MonsterTurn,
-                            MoveReturn::Success(themap) => {
-                                gs.map = themap;
-                                gs.runstate = RunState::PlayerTurn;
-                            },
-                        }  // fixes dealing damage when bumping against Wall BUT don't let PlayerTurn do more
-                    },
-                    
-                    'q' => break,
-                    'r' => gs.runstate = RunState::PreRun,  // TODO delete when not debuggin
-                    _ => {},
-                }
-            },
-            
-            RunState::PlayerTurn => {
-                gs.run_player();
-                gs.runstate = RunState::MonsterTurn;
-            },
-            
-            RunState::MonsterTurn => {
-                gs.run_monsters();
-                gs.runstate = RunState::AwaitingInput;
-            },
-            
-            RunState::GameOver => {
-                gs.map.clear_log();
-                gs.map.add_to_log("You died!\nq to quit, r to restart.");
-                
-                gs.map.print_logs();
-                
-                match get_keystroke() {
-                    'q' => break,
-                    'r' => gs.runstate = RunState::PreRun,
-                    _ => {},
-                }
-                
-            },
-            
-            RunState::GameWon => {
-                gs.map.clear_log();
-                gs.map.add_to_log("You won the game!\nr for restart, q if quit.");
-                gs.map.print_logs();
-                
-                match get_keystroke() {
-                    'q' => { break },
-                    'r' => gs.runstate = RunState::PreRun,
-                    _ => {},
-                }
-            },
-        }
-        
-        gs.map.delete_dead();
-        
-        
-        if !gs.map.player_exists() && !(gs.runstate == RunState::PreRun) {
-            gs.runstate = RunState::GameOver;
-        }
-        
-        if !gs.map.monsters_exists() && gs.runstate == RunState::AwaitingInput {
-            gs.runstate = RunState::GameWon;
-        }
-        
-        gs.render();  // prints log here
-        //std::thread::sleep(std::time::Duration::from_secs(2));
-    }
-    
-    execute!(
-        stdout(),
-        terminal::Clear(terminal::ClearType::All),
-        MoveTo(0, 0)
-    )?;
+    State::init()
+        .run()?;
     
     Ok(())
 }
 
 // SOLVED disable dealing damage to monsters when -> Wall
-// SOLVED add monsters AI 
+// SOLVED add monsters AI
 // SOLVED add monster name to log messages
 // SOLVED player has bonuses aganst certain monsters
 // SOLVED decide whether a version of map can be completed
@@ -212,6 +26,7 @@ fn main() -> Result<(), std::io::Error> {
 // SOLVED monster moves toward player
 // TODO monsters have different speed
 // SOLVED arrow keys to move
+// DOING architecture improvement
 // TODO health bar, level system, things to do with gold etc.
 // TODO player refills HP
 // TODO increasing difficulty of levels
