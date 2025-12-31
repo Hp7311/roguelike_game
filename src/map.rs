@@ -5,8 +5,9 @@ use rand::Rng;
 use rand::prelude::IndexedRandom;
 use crossterm::cursor::{MoveToColumn, MoveTo};
 use crossterm::execute;
-use log::info;
+use log::{info, debug};
 
+// CRITICAL monsters not dealing damage as expected
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Map (pub Vec<Vec<Tile>>, pub String);
@@ -22,8 +23,11 @@ impl Map {
         ).unwrap();
         
         match self.get_player_hp() {
-            Some(urhp) => entities::print_hp(urhp),
-            None       => entities::print_hp(0),
+            Some(urhp) => {
+                entities::print_hp(urhp);
+                debug!("{}", urhp);
+            },
+            None => entities::print_hp(0),
         }
         
         // prints gold amount
@@ -40,7 +44,7 @@ impl Map {
                     Tile::Wall => "# ".to_string(),
                     Tile::Player(_) => "@ ".to_string(),
                     Tile::Monster(monstype) => format!("{} ", monstype.glyph),
-                    Tile::Floor => "- ".to_string(),
+                    Tile::Floor => "  ".to_string(),
                 };
                 print!("{}", print_ch);
             }
@@ -50,20 +54,17 @@ impl Map {
         self.print_logs()
     }
     
-    // these 3 functions mainly for main.rs use
-    pub fn clear_log(&self) -> Self {
-        Self (self.0.clone(), String::new())
+    // these 3 functions mainly for main.rs use whem render() can't be reached
+    pub fn clear_log(&mut self) {
+        self.1 = String::new();
     }
     
     pub fn print_logs(&self) {
-        println!("{}", self.1)
+        println!("{}", self.1);
     }
     
-    pub fn add_to_log(&self, msg: &str) -> Self {
-        let mut logs = self.1.clone();
-        logs.push_str(msg);
-    
-        Self (self.0.clone(), logs)
+    pub fn add_to_log(&mut self, msg: &str) {
+        self.1.push_str(msg);
     }
     
     fn get_player_hp(&self) -> Option<i32> {
@@ -80,13 +81,12 @@ impl Map {
         
     }
     
-    pub fn handle_monsters(&self) -> Self {
-        let mut return_vec = self.0.clone();
-        let mut return_log = self.1.clone();
+    pub fn handle_monsters(&mut self) {
+    
         let mut monster_list = Vec::new();
         let mut player_pos = None;
         
-        for (a, inner) in return_vec.iter().enumerate() {
+        for (a, inner) in self.0.iter().enumerate() {
             for (i, tile) in inner.iter().enumerate() {
                 match tile {
                     Tile::Monster(monstertype) => {
@@ -102,28 +102,28 @@ impl Map {
         }
         
         info!("Made it to front of moves_monsters");
-        return_vec = entities::moves_monsters(return_vec);
+        self.0 = entities::moves_monsters(self.0.clone());
         
         for monster in monster_list {
             if let Some(player) = player_pos
-            
                 && entities::in_range(monster.0, player, 2) {
                 
-                    return_vec = Map (return_vec, return_log.clone()).attack(
+                    self.0 = self.attack(
                         monster.0, player
                     );
                     
-                    if let Tile::Player(playerhp) = return_vec[player.0][player.1] {
-                        if playerhp < 1 {
-                            return_log.push_str(
+                    if let Tile::Player(playerhp) = &self.0[player.0][player.1] {
+                        if *playerhp < 1 {
+                            self.1.push_str(
                                 &format!(
                                     "{} at {:?} obliterated you.\n",
                                     monster.1.name, monster.0
                                 )
                             );
                             break;
-                        } else {
-                            return_log.push_str(
+                        }
+                        else {
+                            self.1.push_str(
                                 &format!(
                                     "{} at {:?} dealt {} damage to you.\n",
                                     monster.1.name, monster.0, monster.1.strength
@@ -133,8 +133,6 @@ impl Map {
                     }
                 }
         }
-        
-        Self (return_vec, return_log)
     }
     
     pub fn move_player(&self, to: char) -> MoveReturn {
@@ -201,39 +199,38 @@ impl Map {
         MoveReturn::Success( Self (return_vec, self.1.clone()) )
     }
     
-    pub fn handle_player(&self) -> Self {
-        let mut return_vec = self.0.clone();
+    pub fn handle_player(&mut self) {
+    
         let mut player_pos = None;
         let mut monster_list = Vec::new();
         
-        for (a, inner) in return_vec.iter().enumerate() {
+        for (a, inner) in self.0.iter().enumerate() {
             for (i, tile) in inner.iter().enumerate() {
-                if let Tile::Player(_) = tile {
-                    player_pos = Some((a, i));
-                }
-                if let Tile::Monster(_) = tile {
-                    monster_list.push(
+                match tile {
+                    Tile::Player(_) => player_pos = Some((a, i)),
+                    Tile::Monster(_) => monster_list.push(
                         (a, i)
-                    );
+                    ),
+                    _ => {},
                 }
             }
         }
         
-        let mut return_log = self.1.clone();
         
         if let Some(player) = player_pos {
             for monster in monster_list {
-                if entities::in_range(player, monster, 3) {
-                    return_vec = Map (return_vec, return_log.clone()).attack(
+                if entities::in_range(player, monster, 2) {
+                    // changes map
+                    self.0 = self.attack(
                         player,
                         monster,
                     );
                     let (a, i) = monster;
                     
-                    if let Tile::Monster(mtype) = &return_vec[a][i] {
+                    if let Tile::Monster(mtype) = &self.0[a][i] {
                     
                         if mtype.hp < 1 {
-                            return_log.push_str(
+                            self.1.push_str(
                                 &format!(
                                     "You obliterated {} at {:?}!\n",
                                     mtype.name, monster
@@ -241,8 +238,10 @@ impl Map {
                             );
                             entities::add_to_gold(mtype.gold).unwrap();
                             
-                        } else {
-                            return_log.push_str(
+                        }
+                        
+                        else {
+                            self.1.push_str(
                                 &format!(
                                     "You attacked {} at {:?} of {} damage!\n",
                                     mtype.name, monster, mtype.player_strength_to
@@ -254,33 +253,27 @@ impl Map {
                 }
             }
         }
-        
-        Self (return_vec, return_log)
     }
     
-    pub fn delete_dead(&self) -> Self {
-        let mut return_vec = self.0.clone();
-        let return_log = self.1.clone();
-        
+    pub fn delete_dead(&mut self) {
+    
         for (a, inner) in self.0.clone().iter().enumerate() {
             for (i, tile) in inner.iter().enumerate() {
                 match tile {
                     Tile::Player(hp) => {
                         if *hp < 1 {
-                            return_vec[a][i] = Tile::Floor;
+                            self.0[a][i] = Tile::Floor;
                         }
                     },
                     Tile::Monster(monstertype) => {
                         if monstertype.hp < 1 {
-                            return_vec[a][i] = Tile::Floor;
+                            self.0[a][i] = Tile::Floor;
                         }
                     },
                     _ => {},
                 }
             }
         }
-        
-        Self (return_vec, return_log)
     }
     
     pub fn player_exists(&self) -> bool {
@@ -375,6 +368,7 @@ impl Map {
         let (att_x, att_y) = attacker;
         let (v_x, v_y) = victum;
         
+        // if the victum is:
         match &return_vec[v_x][v_y] {
         
             Tile::Player(hp) => {

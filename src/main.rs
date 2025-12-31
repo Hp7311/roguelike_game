@@ -44,11 +44,11 @@ impl State {
     }
 
     fn run_monsters(&mut self) {
-        self.map = self.map.handle_monsters();
+        self.map.handle_monsters();
     }
     
     fn run_player(&mut self) {
-        self.map = self.map.handle_player()
+        self.map.handle_player();
     }
 }
 
@@ -57,11 +57,31 @@ fn get_keystroke() -> char {
     
     let key: char;
     loop {
-        if let Event::Key(event) = read().unwrap()
-            && let KeyCode::Char(c) = event.code {
-                key = c;
-                break;
+        if let Event::Key(event) = read().unwrap() {
+            match event.code {
+                KeyCode::Up => {
+                    key = 'w';
+                    break;
+                },
+                KeyCode::Down => {
+                    key = 's';
+                    break;
+                },
+                KeyCode::Left => {
+                    key = 'a';
+                    break;
+                },
+                KeyCode::Right => {
+                    key = 'd';
+                    break;
+                },
+                KeyCode::Char(c) if matches!(c, 'w' | 's' | 'a' | 'd' | 'q' | 'r') => {
+                    key = c;
+                    break;
+                },
+                _ => {},
             }
+        }
     }
     
     disable_raw_mode().unwrap();
@@ -73,9 +93,10 @@ fn get_keystroke() -> char {
 fn main() -> Result<(), std::io::Error> {
     
     SimpleLogger::new()
-        .with_level(LevelFilter::Off)
+        //.with_level(LevelFilter::Off)
         .init()
-        .unwrap();
+        .expect("Error init logger");
+        
     let mut gs = State {
         map: map::init_map(),
         runstate: RunState::PreRun,
@@ -99,12 +120,12 @@ fn main() -> Result<(), std::io::Error> {
                 execute!(
                     stdout(),
                     MoveTo(0, (constants::WIDTH + 2).try_into().unwrap())
-                ).unwrap();
+                )?;
                 
                 let key = get_keystroke();
                 match key {
                     'w' | 'a' | 's' | 'd' => {
-                        gs.map = gs.map.clear_log();
+                        gs.map.clear_log();
                         match gs.map.move_player(key) {
                             MoveReturn::Failure => gs.runstate = RunState::MonsterTurn,
                             MoveReturn::Success(themap) => {
@@ -114,7 +135,7 @@ fn main() -> Result<(), std::io::Error> {
                         }  // fixes dealing damage when bumping against Wall BUT don't let PlayerTurn do more
                     },
                     
-                    'q' => { break },
+                    'q' => break,
                     'r' => gs.runstate = RunState::PreRun,  // TODO delete when not debuggin
                     _ => {},
                 }
@@ -131,14 +152,13 @@ fn main() -> Result<(), std::io::Error> {
             },
             
             RunState::GameOver => {
-                gs.map = gs.map
-                    .clear_log()
-                    .add_to_log("You died!\nq to quit, r to restart.");
+                gs.map.clear_log();
+                gs.map.add_to_log("You died!\nq to quit, r to restart.");
                 
                 gs.map.print_logs();
                 
                 match get_keystroke() {
-                    'q' => { break },
+                    'q' => break,
                     'r' => gs.runstate = RunState::PreRun,
                     _ => {},
                 }
@@ -146,13 +166,9 @@ fn main() -> Result<(), std::io::Error> {
             },
             
             RunState::GameWon => {
-                gs.map = gs.map
-                    .clear_log()
-                    .add_to_log("You won the game!\nr for restart, q if quit.");
-                    
-                disable_raw_mode()?;
+                gs.map.clear_log();
+                gs.map.add_to_log("You won the game!\nr for restart, q if quit.");
                 gs.map.print_logs();
-                enable_raw_mode()?;
                 
                 match get_keystroke() {
                     'q' => { break },
@@ -162,7 +178,7 @@ fn main() -> Result<(), std::io::Error> {
             },
         }
         
-        gs.map = gs.map.delete_dead();
+        gs.map.delete_dead();
         
         
         if !gs.map.player_exists() && !(gs.runstate == RunState::PreRun) {
@@ -181,7 +197,8 @@ fn main() -> Result<(), std::io::Error> {
         stdout(),
         terminal::Clear(terminal::ClearType::All),
         MoveTo(0, 0)
-    ).unwrap();
+    )?;
+    
     Ok(())
 }
 
@@ -194,7 +211,7 @@ fn main() -> Result<(), std::io::Error> {
 // SOLVED gold system
 // SOLVED monster moves toward player
 // TODO monsters have different speed
-// TODO arrow keys to move
+// SOLVED arrow keys to move
 // TODO health bar, level system, things to do with gold etc.
 // TODO player refills HP
 // TODO increasing difficulty of levels
