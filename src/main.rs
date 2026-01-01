@@ -8,10 +8,25 @@ mod constants;
 use state::State;
 
 
-fn main() -> Result<(), std::io::Error> {
+fn main() -> Box<dyn std::error::Error> {
     
-    State::init()
-        .run()?;
+    let mut gs = State::new()
+        .init_map()?
+        .dig_floors()?
+        .add_player()
+        .add_monsters()?
+        .validate()?;
+
+        
+    // turn-based game loop
+    loop {
+        gs.get_input()
+            .move_entities()
+            .handle_entities()
+            .delete_dead()
+            .render();
+    }
+    
     
     Ok(())
 }
