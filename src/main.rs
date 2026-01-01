@@ -17,7 +17,7 @@ fn main() -> Result<(), StateError> {
     let mut gs = State::init()
         .dig_floors()?
         .add_player()
-        .add_monsters()?
+        .add_monsters()
         .validate()?;
 
         

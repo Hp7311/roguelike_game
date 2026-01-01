@@ -5,6 +5,7 @@ use crossterm::{
     terminal::{
         Clear, ClearType, enable_raw_mode, disable_raw_mode
     },
+    event::{KeyCode,Event},
     execute,
 };
 
@@ -19,12 +20,20 @@ use crate::entities::{
 pub struct State {
     map: Map,
     logs: Logs,
-    input: Option<char>,
+    move_dir: Option<Direction>,
     player: Option<Player>,
     monsters: Option<Vec<Monster>>,
     
     game_won: bool,
     game_lost: bool,
+}
+
+#[derive(PartialEq)]
+pub enum Direction {
+    Up,
+    Down,
+    Right,
+    Left,
 }
 
 
@@ -46,8 +55,7 @@ impl State {
     
     /// digs rooms and corridors
     pub fn dig_floors(mut self) -> Result<Self, StateError> {
-        self.map = Map.dig_rooms()?  // implement later
-            .dig_corridors()?;
+        self.map = self.map.dig_rooms()?;  // TODO implement later
             
         Ok(self)
     }
@@ -61,49 +69,36 @@ impl State {
         self
     }
     
-    pub fn add_monsters(mut self) -> Result<Self, StateError> {
+    pub fn add_monsters(mut self) -> Self {
         
         if self.monsters.is_none() {
-            self.monsters = Some(Monster::spawn(&self.map))?;
+            self.monsters = Some(Monster::spawn(&self.map));
         }
         
-        Ok(self)
+        self
     }
     
     /// check if version of map doable
-    pub fn validate(&self) -> Result<Self, StateError> {
-        
+    pub fn validate(self) -> Result<Self, StateError> {
+        Ok(self)  // TODO not important since rooms are hand drawn and connected
     }
     
-    /// modifys `input` when received
+    
+    /// modifys `move_dir` when received
     pub fn get_input(mut self) -> std::io::Result<Self> {
+        use Direction::*;
         enable_raw_mode()?;
     
         loop {
             if let Event::Key(event) = read().unwrap() {
                 match event.code {
-                    KeyCode::Up => {
-                        self.input = 'w';
-                        break;
-                    },
-                    KeyCode::Down => {
-                        self.input = 's';
-                        break;
-                    },
-                    KeyCode::Left => {
-                        self.input = 'a';
-                        break;
-                    },
-                    KeyCode::Right => {
-                        self.input = 'd';
-                        break;
-                    },
-                    KeyCode::Char(c) if matches!(c, 'w' | 's' | 'a' | 'd' | 'q' | 'r') => {
-                        self.input = c;
-                        break;
-                    },
-                    _ => {},
+                    KeyCode::Up    | KeyCode::Char('w') => self.move_dir = Up,
+                    KeyCode::Down  | KeyCode::Char('s') => self.move_dir = Down,
+                    KeyCode::Left  | KeyCode::Char('a') => self.move_dir = Left,
+                    KeyCode::Right | KeyCode::Char('d') => self.move_dir = Right,
+                    _ => continue,
                 }
+                break;
             }
         }
         disable_raw_mode()?;

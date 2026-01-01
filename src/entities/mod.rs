@@ -27,7 +27,7 @@ impl Player {
         let mut chosen_index = 0;
         
         loop {
-            chosen_index = indexes.choose(&mut rng)
+            chosen_index = indexes.choose(&mut rng);
             if map.map[chosen_index] == Tile::Floor {
                 break;  // if spawn on floor
             }
