@@ -2,16 +2,19 @@
 
 mod state;
 mod entities;
-mod utils;
-mod constants;
+mod map;
+mod logs;
 
-use state::State;
+mod maths;
+mod gold;
+mod CONSTANTS;
+
+use state::{State, StateError};
 
 
-fn main() -> Box<dyn std::error::Error> {
+fn main() -> Result<(), StateError> {
     
-    let mut gs = State::new()
-        .init_map()?
+    let mut gs = State::init()
         .dig_floors()?
         .add_player()
         .add_monsters()?
@@ -20,11 +23,12 @@ fn main() -> Box<dyn std::error::Error> {
         
     // turn-based game loop
     loop {
-        gs.get_input()
+        gs.get_input()?
             .move_entities()
             .handle_entities()
             .delete_dead()
-            .render();
+            .render()
+            .handle_gameover();
     }
     
     
