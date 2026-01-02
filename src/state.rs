@@ -44,7 +44,7 @@ impl State {
         Self {
             map: Map::new(),
             logs: Logs::new(),
-            input: None,
+            move_dir: None,
             player: None,
             monsters: None,
             
@@ -55,7 +55,7 @@ impl State {
     
     /// digs rooms and corridors
     pub fn dig_floors(mut self) -> Result<Self, StateError> {
-        self.map = self.map.dig_rooms()?;  // TODO implement later
+        self.map = self.map.dig_rooms();  // TODO implement later
             
         Ok(self)
     }
@@ -80,12 +80,12 @@ impl State {
     
     /// check if version of map doable
     pub fn validate(self) -> Result<Self, StateError> {
-        Ok(self)  // TODO not important since rooms are hand drawn and connected
+        Ok(self)  // not important since rooms are hand drawn and connected
     }
     
     
     /// modifys `move_dir` when received
-    pub fn get_input(mut self) -> std::io::Result<Self> {
+    pub fn get_input(&mut self) -> std::io::Result<Self> {
         use Direction::*;
         enable_raw_mode()?;
     
@@ -103,22 +103,25 @@ impl State {
         }
         disable_raw_mode()?;
     
-        self
+        Ok(self)
     }
     
     
     /// move monsters and player
-    pub fn move_entities(mut self) -> Self {
+    pub fn move_entities(&mut self) -> Self {
+        self.player.move_to(&self);  // not sure whether this will consume self and if it actually modifys
+        self.monsters.move_to(&self);
         
+        self
     }
     
     /// handle collisions, attacks etc
-    pub fn handle_entities(mut self) -> Self {
-        
+    pub fn handle_entities(&mut self) -> Self {
+        entities::handle_entities(self);
     }
     
     /// delete entities with health < 1, assign struct variants if won/lost
-    pub fn delete_dead(mut self) -> Self {
+    pub fn delete_dead(&mut self) -> Self {
         
     }
     

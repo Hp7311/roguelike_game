@@ -102,4 +102,12 @@ impl Rect {
         
         all_pixels
     }
+    
+    /// returns center point of the rect
+    pub get_center(&self) -> Cord {
+        let x = start.x + width / 2;  // "/" gets the integer result
+        let y = start.y + length / 2;
+        
+        Cord::new(x, y)
+    }
 }

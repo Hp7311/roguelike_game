@@ -1,7 +1,14 @@
 /// provides Player and Monster (in State)
 use crate::maths::Cord;
-use crate::map::{Map, Tile};
+use crate::map::{Map, Tile, Direction};
 use rand::prelude::*;
+
+mod move_player;
+mod move_monster;
+
+use move_player::move_player;
+use move_monster::move_monster;
+
 
 pub struct Player {
     pos: Cord,
@@ -38,7 +45,12 @@ impl Player {
             hp: CONSTANTS::PLAYER_HEALTH,
         }
     }
+    
+    pub fn move_to(&mut self, state: &State) {
+        self.pos = move_player(self.pos, state);
+    }
 }
+
 
 impl Monster {
     pub fn spawn(map: &Map) -> Vec<Self> {
@@ -66,6 +78,10 @@ impl Monster {
         
         monsters
     }
+    
+    pub fn move_to(&mut self, state: &State) {
+        self.pos = move_monster(self.pos, state);
+    }
 }
 
 impl MonsterInfo {
@@ -84,8 +100,9 @@ impl MonsterInfo {
 fn get_rand_monster() -> Monster {
     let mut rng = rand::rng();
     
-    all_monsters_info.choose(&mut rng)
+    all_monsters_info().choose(&mut rng)
 }
+
 
 /// ALL MONSTERS DEFINED HERE
 fn all_monsters_info() -> Vec<MonsterInfo> {
