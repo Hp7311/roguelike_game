@@ -5,9 +5,11 @@ use rand::prelude::*;
 
 mod move_player;
 mod move_monster;
+mod handle;
 
 use move_player::move_player;
-use move_monster::move_monster;
+pub use move_monster::move_monsters;
+pub use handle::handle_entities;
 
 
 pub struct Player {

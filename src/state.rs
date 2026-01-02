@@ -110,14 +110,16 @@ impl State {
     /// move monsters and player
     pub fn move_entities(&mut self) -> Self {
         self.player.move_to(&self);  // not sure whether this will consume self and if it actually modifys
-        self.monsters.move_to(&self);
+        
+        self.monsters = entities::move_monsters(&self);
         
         self
     }
     
     /// handle collisions, attacks etc
     pub fn handle_entities(&mut self) -> Self {
-        entities::handle_entities(self);
+        entities::handle_entities(&self);
+        self
     }
     
     /// delete entities with health < 1, assign struct variants if won/lost

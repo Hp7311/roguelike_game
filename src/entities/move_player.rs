@@ -3,7 +3,7 @@ use crate::map::{Map, Tile, Direction};
 use crate::maths::Cord;
 use crate::state::State;
 use crate::CONSTANTS::{MAP_WIDTH, MAP_LENGTH}
-use Direction::*;
+use crate::state::Direction::*;
 
 pub fn move_player(target: Cord, state: &State) -> Cord {
     let direction = state.move_dir.unwrap();
