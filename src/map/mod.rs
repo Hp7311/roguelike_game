@@ -1,7 +1,11 @@
 /// contains Map
+use crossterm::{
+    execute,
+    cursor::MoveTo,
+};
 mod dig_map;
 
-use crate::CONSTANTS::{MAP_WIDTH, MAP_HEIGHT};
+use crate::CONSTANTS::{MAP_WIDTH, MAP_HEIGHT, CURSOR_DRAW_MAP};
 use crate::entities::{Player, Monster};
 
 #[derive(PartialEq)]
@@ -32,8 +36,28 @@ impl Map {
         dig_map::dig(self)?  // from original map -> self should be all Wall
     }
     
-    /*/// checks if player can reach every monster
-    pub fn can_reach(&self, player: Player, monster: Vec<Monster>) -> Result<Self, StateError> {
+    /// render map
+    pub fn render(&self) {
+        execute!(stdout(), MoveTo(CURSOR_DRAW_MAP, 0));
         
-    }*/
+        println!("-".repeat(MAP_LENGTH * 4 + 1));
+        
+        for (i, tile) in self.map.iter().enumerate() {
+            print!("|")
+            if (i + 1) % MAP_LENGTH == 0 {
+                match tile {
+                    Wall => println!(" # |"),
+                    Floor => println!("   |"),
+                }
+            }
+            else {
+                match tile {
+                    Wall => print!(" # "),
+                    Floor => print!("   "),
+                }
+            }
+        }
+        
+        println!("-".repeat(MAP_LENGTH * 4 + 1));
+    }
 }

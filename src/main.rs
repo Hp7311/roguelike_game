@@ -23,11 +23,12 @@ fn main() -> Result<(), StateError> {
         
     // turn-based game loop
     loop {
-        gs.get_input()?
+        gs.clear_screen()
+            .render()
+            .get_input()?
             .move_entities()
             .handle_entities()
             .delete_dead()
-            .render()
             .handle_gameover();
     }
     

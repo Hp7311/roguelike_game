@@ -25,6 +25,19 @@ impl Cord {
         
         Self { x, y }
     }
+    
+    /// check if two Cords in the specifed range
+    pub fn in_range(&self, other: &Self, range: u32) -> bool {
+        let range = range as usize;
+        
+        if self.x.abs_diff(other.x) <= range
+            && self.y.abs_diff(other.y) <= range {
+            
+            return true
+        }
+        
+        false
+    }
 }
 
 
@@ -34,6 +47,7 @@ pub struct Rect {
     length: usize,
     width: usize,
 }
+
 
 impl Rect {
     pub fn new(start: Cord, length: usize, width: usize) -> Self {

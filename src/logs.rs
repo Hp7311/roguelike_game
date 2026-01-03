@@ -6,9 +6,17 @@ pub struct Logs {
 
 impl Logs {
     pub fn new() -> Self {
-        Logs {
+        Self {
             msg: String::new(),
         }
     }
     
+    pub fn add_to_log(&mut self, msg: &str) {
+        self.msg.push_str(msg);
+        self.msg.push_str("\n");
+    }
+    
+    pub fn render(&self) {
+        println!("{}", self.msg);
+    }
 }

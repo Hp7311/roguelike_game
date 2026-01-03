@@ -6,6 +6,7 @@ use crossterm::{
         Clear, ClearType, enable_raw_mode, disable_raw_mode
     },
     event::{KeyCode,Event},
+    cursor::MoveTo,
     execute,
 };
 
@@ -83,6 +84,12 @@ impl State {
         Ok(self)  // not important since rooms are hand drawn and connected
     }
     
+    /// clear screen before game loop
+    pub fn clear_screen(&self) -> Self {
+        execute!(stdout(), Clear(ClearType::All), MoveTo(0, 0));
+        
+        self
+    }
     
     /// modifys `move_dir` when received
     pub fn get_input(&mut self) -> std::io::Result<Self> {
@@ -118,22 +125,44 @@ impl State {
     
     /// handle collisions, attacks etc
     pub fn handle_entities(&mut self) -> Self {
-        entities::handle_entities(&self);
-        self
+        entities::handle_entities(&self)
     }
     
     /// delete entities with health < 1, assign struct variants if won/lost
     pub fn delete_dead(&mut self) -> Self {
-        
+        entities::delete_dead(&self)
     }
     
     /// renders map, log, with entities (maybe last move?)
     pub fn render(&self) -> Self {
+        self.map.render();
+        self.player.unwrap().render()
+        for monster in self.monsters.unwrap() {
+            monster.render();
+        }
         
+        self.logs.render();
+        
+        self
     }
     
     /// performs re-initialization if lost/won
     pub fn handle_gameover(&mut self) {  // correct signature?!
-        
+        if self.game_won {
+            self = self::init()
+                .dig_floors()?
+                .add_player()
+                .add_monsters()
+                .validate()?;
+            self.logs.add_to_log("You won!");
+        }
+        else if self.game_lost {
+            self = self::init()
+                .dig_floors()?
+                .add_player()
+                .add_monsters()
+                .validate()?;
+            self.logs.add_to_log("You lost!");
+        }
     }
 }
