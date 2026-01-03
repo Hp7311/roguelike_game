@@ -31,9 +31,6 @@ fn main() -> Result<(), StateError> {
             .delete_dead()
             .handle_gameover();
     }
-    
-    
-    Ok(())
 }
 
 // SOLVED disable dealing damage to monsters when -> Wall

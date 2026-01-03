@@ -1,6 +1,6 @@
 /// handles monsters and players attacking
 use crate::state::State;
-use crate::CONSANTS::{ATTACK_RANGE, PLAYER_STRENGTH};
+use crate::CONSTANTS::{ATTACK_RANGE, PLAYER_STRENGTH};
 
 
 pub fn handle_entities(state: &State) -> State {
@@ -9,7 +9,7 @@ pub fn handle_entities(state: &State) -> State {
     
     // DESIGN player first, monster second. Same range
     // if in range, attack
-    ret.monster.unwrap().mut_iter()
+    ret.monsters.unwrap().iter()
         .filter(|&monster| {
             ret.player.unwrap().pos
                 .in_range(&monster.pos, ATTACK_RANGE)
@@ -23,20 +23,20 @@ pub fn handle_entities(state: &State) -> State {
                 ));
             }
             else {
-                ret.log.add_to_log(&format!(
+                ret.logs.add_to_log(&format!(
                     "You dealt {} damage to {} at {}", PLAYER_STRENGTH, monster.info.name, monster.pos
                 ));
             }
             
             // monster
             if monster.info.hp > 0 {
-                ret.player.hp -= monster.info.strength;
-                ret.log.add_to_log(&format!(
+                ret.player.unwrap().hp -= monster.info.strength;
+                ret.logs.add_to_log(&format!(
                     "{} at {} dealt {} damage to you", monster.info.name, monster.name, monster.info.strength
                 ))
             }
         })
         .collect();
     
-    ret
+    *ret  // trying deref to pass expected State found &State
 }

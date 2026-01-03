@@ -1,4 +1,13 @@
-pub const PLAYER_HEALTH: u32 = 100;
+pub const PLAYER_HEALTH: i32 = 100;
 pub const MONSTER_NUMBER: u32 = 4;
 pub const LENGTH: i32 = 26;
 pub const WIDTH: i32  = 26;
+pub const MAP_WIDTH: usize = 10;
+pub const MAP_LENGTH: usize = 10;
+pub const ATTACK_RANGE: u32 = 1;
+pub const PLAYER_STRENGTH: u32 = 10;
+pub const MAX_ROOM_NUM: usize = 5;
+pub const MAX_ROOM_LENGTH: usize = 4;
+pub const MAX_ROOM_WIDTH: usize = 4;
+pub const RANDOM_CORRIDOR_NUM: u32 = 4;
+pub const MAP_TOP_OFFSET: u32 = 4;

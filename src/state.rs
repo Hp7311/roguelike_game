@@ -5,7 +5,7 @@ use crossterm::{
     terminal::{
         Clear, ClearType, enable_raw_mode, disable_raw_mode
     },
-    event::{KeyCode,Event},
+    event::{KeyCode, Event, read},
     cursor::MoveTo,
     execute,
 };
@@ -13,20 +13,19 @@ use crossterm::{
 use crate::map::Map;
 use crate::logs::Logs;
 use crate::entities::{
-    Player, Monster
+    Player, Monster, move_monsters, handle_entities
 };
 
 
-#[derive(Debug)]
 pub struct State {
-    map: Map,
-    logs: Logs,
-    move_dir: Option<Direction>,
-    player: Option<Player>,
-    monsters: Option<Vec<Monster>>,
+    pub map: Map,
+    pub logs: Logs,
+    pub move_dir: Option<Direction>,
+    pub player: Option<Player>,
+    pub monsters: Option<Vec<Monster>>,
     
-    game_won: bool,
-    game_lost: bool,
+    pub game_won: bool,
+    pub game_lost: bool,
 }
 
 #[derive(PartialEq)]
@@ -35,6 +34,11 @@ pub enum Direction {
     Down,
     Right,
     Left,
+}
+
+#[derive(Debug)]
+pub enum StateError {  // TODO implement StateError and use it to handle errors ( thiserror, anyhow )
+    General(String),
 }
 
 
@@ -56,7 +60,7 @@ impl State {
     
     /// digs rooms and corridors
     pub fn dig_floors(mut self) -> Result<Self, StateError> {
-        self.map = self.map.dig_rooms();  // TODO implement later
+        self.map = self.map.dig_rooms()?;
             
         Ok(self)
     }
@@ -80,29 +84,29 @@ impl State {
     }
     
     /// check if version of map doable
-    pub fn validate(self) -> Result<Self, StateError> {
+    pub fn validate(self) -> Result<Self, StateError> {  // TODO actually validate
         Ok(self)  // not important since rooms are hand drawn and connected
     }
     
     /// clear screen before game loop
-    pub fn clear_screen(&self) -> Self {
+    pub fn clear_screen(&self) -> &Self {
         execute!(stdout(), Clear(ClearType::All), MoveTo(0, 0));
         
-        self
+        self  // will derefencing change self from &State to State?
     }
     
     /// modifys `move_dir` when received
-    pub fn get_input(&mut self) -> std::io::Result<Self> {
+    pub fn get_input(&mut self) -> std::io::Result<&mut Self> {
         use Direction::*;
         enable_raw_mode()?;
     
         loop {
             if let Event::Key(event) = read().unwrap() {
                 match event.code {
-                    KeyCode::Up    | KeyCode::Char('w') => self.move_dir = Up,
-                    KeyCode::Down  | KeyCode::Char('s') => self.move_dir = Down,
-                    KeyCode::Left  | KeyCode::Char('a') => self.move_dir = Left,
-                    KeyCode::Right | KeyCode::Char('d') => self.move_dir = Right,
+                    KeyCode::Up    | KeyCode::Char('w') => self.move_dir = Some(Up),
+                    KeyCode::Down  | KeyCode::Char('s') => self.move_dir = Some(Down),
+                    KeyCode::Left  | KeyCode::Char('a') => self.move_dir = Some(Left),
+                    KeyCode::Right | KeyCode::Char('d') => self.move_dir = Some(Right),
                     _ => continue,
                 }
                 break;
@@ -110,58 +114,58 @@ impl State {
         }
         disable_raw_mode()?;
     
-        Ok(self)
+        Ok(self)  // &mut self not supported?? trying self.clone()
     }
     
     
     /// move monsters and player
-    pub fn move_entities(&mut self) -> Self {
-        self.player.move_to(&self);  // not sure whether this will consume self and if it actually modifys
+    pub fn move_entities(&mut self) -> &mut Self {
+        self.player.unwrap().move_to(&self);  // not sure whether this will consume self and if it actually modifys
         
-        self.monsters = entities::move_monsters(&self);
+        self.monsters = Some(move_monsters(&self));
         
-        self
+        self  // trying to borrow self, says &mut self not supported
     }
     
     /// handle collisions, attacks etc
     pub fn handle_entities(&mut self) -> Self {
-        entities::handle_entities(&self)
+        handle_entities(&self)
     }
     
     /// delete entities with health < 1, assign struct variants if won/lost
     pub fn delete_dead(&mut self) -> Self {
-        entities::delete_dead(&self)
+        crate::entities::delete_dead(&self)
     }
     
     /// renders map, log, with entities (maybe last move?)
-    pub fn render(&self) -> Self {
+    pub fn render(&self) -> &Self {
         self.map.render();
-        self.player.unwrap().render()
+        self.player.unwrap().render();
         for monster in self.monsters.unwrap() {
             monster.render();
         }
         
         self.logs.render();
         
-        self
+        self  // trying derefencing, says &Self not Self
     }
     
     /// performs re-initialization if lost/won
     pub fn handle_gameover(&mut self) {  // correct signature?!
         if self.game_won {
-            self = self::init()
-                .dig_floors()?
+            *self = Self::init()  // self::init() didn't work
+                .dig_floors().unwrap()  // TODO temporary
                 .add_player()
                 .add_monsters()
-                .validate()?;
+                .validate().unwrap();  // TODO temporary
             self.logs.add_to_log("You won!");
         }
         else if self.game_lost {
-            self = self::init()
-                .dig_floors()?
+            *self = Self::init()
+                .dig_floors().unwrap()  // TODO temporary
                 .add_player()
                 .add_monsters()
-                .validate()?;
+                .validate().unwrap();  // TODO temporary
             self.logs.add_to_log("You lost!");
         }
     }

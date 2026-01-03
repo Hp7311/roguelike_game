@@ -1,14 +1,22 @@
 /// contains Map
 use crossterm::{
-    execute,
-    cursor::MoveTo,
+    QueueableCommand
+    cursor::{
+        MoveTo, MoveToNextLine
+    },
+    style::Print,
 };
+use std::io::Write;
+
 mod dig_map;
 
-use crate::CONSTANTS::{MAP_WIDTH, MAP_HEIGHT, CURSOR_DRAW_MAP};
+use crate::CONSTANTS::{
+    MAP_WIDTH, MAP_LENGTH, MAP_TOP_OFFSET
+};
 use crate::entities::{Player, Monster};
+use crate::state::StateError;  // TODO temporary
 
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum Tile {
     Wall,
     Floor,
@@ -18,10 +26,9 @@ use Tile::*;
 
 /// main Map struct containing Wall or Floor
 pub struct Map {
-    map: Vec<Tile>,
+    pub map: Vec<Tile>,
 }
 
-enum BuildError {}
 
 impl Map {
     
@@ -32,32 +39,31 @@ impl Map {
     }
     
     /// dig rooms
-    pub fn dig_rooms(mut self) -> Result<Self, BuildError> {
-        dig_map::dig(self)?  // from original map -> self should be all Wall
+    pub fn dig_rooms(mut self) -> Result<Self, StateError> {
+        dig_map::dig(self)  // from original map -> self should be all Wall
     }
     
     /// render map
     pub fn render(&self) {
-        execute!(stdout(), MoveTo(CURSOR_DRAW_MAP, 0));
-        
-        println!("-".repeat(MAP_LENGTH * 4 + 1));
+        let mut stdout = std::io::stdout();
+
+        stdout.queue(MoveTo(MAP_TOP_OFFSET + 1, 0));
+
+        stdout.queue(Print( "{}", ("-".repeat(MAP_LENGTH * 4 + 1)) );
         
         for (i, tile) in self.map.iter().enumerate() {
-            print!("|")
-            if (i + 1) % MAP_LENGTH == 0 {
-                match tile {
-                    Wall => println!(" # |"),
-                    Floor => println!("   |"),
-                }
+            print!("|");
+            match tile {
+                Wall => stdout.queue(Print(" # |")),
+                Floor => stdout.queue(Print("   |")),
             }
-            else {
-                match tile {
-                    Wall => print!(" # "),
-                    Floor => print!("   "),
-                }
+            if (i + 1) % MAP_LENGTH == 0 {
+                stdout.queue(MoveToNextLine(1));
             }
         }
+
+        stdout.queue(Print( "{}", ("-".repeat(MAP_LENGTH * 4 + 1)) ));
         
-        println!("-".repeat(MAP_LENGTH * 4 + 1));
+        stdout.flush();
     }
 }

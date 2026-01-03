@@ -7,17 +7,19 @@ use crate::state::Direction;
 use Direction::*;
 use std::collections::VecDeque;
 
-const NSWE: [(i32)] = [(0, 1), (1, 0), (0, -1), (-1, 0)];
-const NSWE_DIRS: [Direction] = [Right, Down, Left, Up];
+const NSWE: [(i32, i32); 4] = [(0, 1), (1, 0), (0, -1), (-1, 0)];
+const NSWE_DIRS: [Direction; 4] = [Right, Down, Left, Up];
 
 
 pub fn move_monsters(state: &State) -> Vec<Monster> {
     let mut ret = Vec::new(); //state.monsters;
-    let s_map = get_scent_map(state.map.map, state.player.pos);
+    let s_map = get_scent_map(state.map.map, state.player.unwrap().pos);
     
-    for monster in state.monsters.mut_iter() {
-    
-        match look_around(monster.pos, &s_map) {
+    for monster in state.monsters.unwrap() {
+
+        let mut monster = monster;
+        
+        match look_around(monster.pos, &s_map) {  // known size problem
             Up => monster.pos.x -= 1,
             Down => monster.pos.x += 1,
             Right => monster.pos.y += 1,
@@ -32,20 +34,20 @@ pub fn move_monsters(state: &State) -> Vec<Monster> {
 
 
 /// returns where the monster sould move
-fn look_around(pos: Cord, scent_map: [Option<u32>]) -> Direction {
+fn look_around(pos: Cord, scent_map: &Vec<Option<u32>>) -> Direction {  // known size problem
 
     let mut smallest = None;
     let mut ret = None;
     
     for (i, move_by) in NSWE.iter().enumerate() {
-        let x = pos.x as i32 + move_by.0;
+        let x = pos.x as i32 + move_by.0;  // problem accessing the tuple
         let y = pos.y as i32 + move_by.1;
         
         if x < 0 || y < 0 {
             continue;
         }
         
-        let shifted_cords = Cord::new(x, y)
+        let shifted_cords = Cord::new(x as usize, y as usize);
         
         if let Some(tile) = scent_map.get(shifted_cords.get_1d())
             && let Some(num) = tile {
@@ -74,13 +76,13 @@ fn get_scent_map(map: Vec<Tile>, player: Cord) -> Vec<Option<u32>> {
     
     // start with 0
     ret[player.get_1d()] = Some(0);
-    queue.push(player);
+    queue.push_back(player);
     
     while let Some(exploring) = queue.pop_front() {
     
         let num_tobe_passed = ret[exploring.get_1d()].unwrap() + 1;
     
-        for move_by in NSWE {
+        for move_by in &NSWE {
         
             let x = exploring.x as i32 + move_by.0;
             let y = exploring.y as i32 + move_by.1;
@@ -89,12 +91,12 @@ fn get_scent_map(map: Vec<Tile>, player: Cord) -> Vec<Option<u32>> {
                 continue;
             }
             
-            let shifted_cords = Cord::new(x, y);
+            let shifted_cords = Cord::new(x as usize, y as usize);
             
             // if not out of bound
             if let Some(tile) = map.get(shifted_cords.get_1d()) {
             
-                if tile == Tile::Wall {  // looking on wall
+                if *tile == Tile::Wall {  // looking on wall
                     continue;
                 }
                 

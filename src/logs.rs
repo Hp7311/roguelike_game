@@ -1,4 +1,8 @@
 /// provides Logs struct for logging actions in game
+use crossterm::{
+    QueueableCommand, cursor, style::Print
+};
+use std::io::Write;
 
 pub struct Logs {
     msg: String,
@@ -17,6 +21,11 @@ impl Logs {
     }
     
     pub fn render(&self) {
-        println!("{}", self.msg);
+        
+        let mut stdout = std::io::stdout();
+
+        stdout.queue(Print("{}", self.msg));
+
+        stdout.flush();
     }
 }

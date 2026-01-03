@@ -1,11 +1,12 @@
 /// math tools to help with position, drawing rooms etc
 use crate::map::Map;
-use crate::CONSTANTS{MAP_WIDTH, MAP_HEIGHT}
+use crate::CONSTANTS::{MAP_WIDTH, MAP_LENGTH};
 
 /// access 1D map wit 2D cords
+#[derive(PartialEq, Clone)]
 pub struct Cord {
-    x: usize,
-    y: usize,
+    pub x: usize,
+    pub y: usize,
 }
 
 impl Cord {
@@ -71,7 +72,7 @@ impl Rect {
         let overlap_points = self_points.iter()
             .any(|&point| {
                 other_points.iter()
-                    .any(|&other_point| if other_point == point )
+                    .any(|&other_point| other_point == point )
             });
             
             
@@ -85,7 +86,7 @@ impl Rect {
     
     
     /// whether self can fit in the Map
-    pub fn can_fit(&self, target: &Map) -> bool {
+    pub fn can_fit(&self) -> bool {
     
         let start: Cord = self.start;
         let right_lower: Cord = Cord::new(
@@ -118,9 +119,9 @@ impl Rect {
     }
     
     /// returns center point of the rect
-    pub get_center(&self) -> Cord {
-        let x = start.x + width / 2;  // "/" gets the integer result
-        let y = start.y + length / 2;
+    pub fn get_center(&self) -> Cord {
+        let x = self.start.x + self.width / 2;  // "/" gets the integer result
+        let y = self.start.y + self.length / 2;
         
         Cord::new(x, y)
     }

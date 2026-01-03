@@ -1,13 +1,18 @@
 /// provides Player and Monster (in State)
 use crate::maths::Cord;
-use crate::map::{Map, Tile, Direction};
+use crate::map::{Map, Tile};
+use crate::state::{State, Direction};
+use crate::CONSTANTS::{
+    PLAYER_HEALTH, CURSOR_DRAW_MAP, MONSTER_NUMBER,
+};
+
 use rand::prelude::*;
 use crossterm::{
     execute,
     cursor::MoveTo,
 };
 use std::io::stdout;
-use crate::state::State;
+use std::io::Write;
 
 mod move_player;
 mod move_monster;
@@ -22,6 +27,7 @@ pub struct Player {
     pos: Cord,
     hp: i32,
 }
+
 
 pub struct Monster {
     pos: Cord,
@@ -43,7 +49,7 @@ impl Player {
         let mut chosen_index = 0;
         
         loop {
-            chosen_index = indexes.choose(&mut rng);
+            chosen_index = indexes.choose(&mut rng).unwrap();  // maybe will be &Type and Type problem
             if map.map[chosen_index] == Tile::Floor {
                 break;  // if spawn on floor
             }
@@ -51,12 +57,12 @@ impl Player {
         
         Self {
             pos: Cord::from_1d(chosen_index),
-            hp: CONSTANTS::PLAYER_HEALTH,
+            hp: PLAYER_HEALTH,
         }
     }
     
     pub fn move_to(&mut self, state: &State) {
-        self.pos = move_player(self.pos, state);
+        self.pos = move_player(self.pos.clone(), state);
     }
     
     pub fn render(&self) {
@@ -79,17 +85,17 @@ impl Monster {
         
         let mut monsters = Vec::new();
         
-        for _ in 0..CONSTANTS::MONSTER_NUMBER {  // atomatically generate appriopriate num in fuuture
+        for _ in 0..MONSTER_NUMBER {  // atomatically generate appriopriate num in fuuture
             
             loop {
-                chosen_index = indexes.choose(&mut rng);
+                chosen_index = indexes.choose(&mut rng).unwrap();  // may still be &Type and Type issue
                 if map.map[chosen_index] == Tile::Floor {
                     break;
                 }
             }
             
             monsters.push( Self {
-                pos: Cord::from_1d(&chosen_index),
+                pos: Cord::from_1d(chosen_index),
                 info: get_rand_monster(),
             });
             
@@ -99,7 +105,7 @@ impl Monster {
     }
     
     pub fn move_to(&mut self, state: &State) {
-        self.pos = move_monster(self.pos, state);
+        self.pos = move_monsters(self.pos, state);
     }
     
     /// prints a single monster
@@ -128,7 +134,7 @@ impl MonsterInfo {
 }
 
 /// get a random Monster
-fn get_rand_monster() -> Monster {
+fn get_rand_monster() -> MonsterInfo {  // may say expected &--- found ---
     let mut rng = rand::rng();
     
     all_monsters_info().choose(&mut rng).unwrap()
@@ -151,7 +157,7 @@ pub fn delete_dead(state: &State) -> State {
     
     if ret.player.unwrap().hp <= 0 {
         ret.game_lost = true;
-        return ret;
+        return *ret;  // deref trying to convert &State to State
     }
     
     ret.monsters = Some(state.monsters.unwrap().iter()
@@ -163,5 +169,5 @@ pub fn delete_dead(state: &State) -> State {
         ret.game_won = true;
     }
     
-    ret
+    *ret  // deref trying to convert &State to State
 }
