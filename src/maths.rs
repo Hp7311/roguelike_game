@@ -47,6 +47,7 @@ impl std::fmt::Display for Cord {
     }
 }
 
+#[derive(Clone)]
 /// a Rectangle from start -> down/right
 pub struct Rect {
     start: Cord,
@@ -67,17 +68,17 @@ impl Rect {
     /// checks if self overlaps with another Rect
     // PS maybe more lightweight method?
     pub fn overlaps_with(&self, other: Self) -> bool {
-        let self_start = self.start;
+        let self_start = self.start.clone();
         let self_points = self.get_all_pixels();
         
-        let other_start = other.start;
+        let other_start = other.start.clone();
         let other_points = other.get_all_pixels();
         
         
         let overlap_points = self_points.iter()
-            .any(|&point| {
+            .any(|point| {
                 other_points.iter()
-                    .any(|&other_point| other_point == point )
+                    .any(|other_point| other_point == point )
             });
             
             
@@ -93,7 +94,7 @@ impl Rect {
     /// whether self can fit in the Map
     pub fn can_fit(&self) -> bool {
     
-        let start: Cord = self.start;
+        let start: Cord = self.start.clone();
         let right_lower: Cord = Cord::new(
             start.x + self.width,
             start.y + self.length

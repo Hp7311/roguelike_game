@@ -11,30 +11,25 @@ use std::collections::{VecDeque, HashMap};
 const NSWE_DIRS: [Direction; 4] = [Right, Down, Left, Up];*/
 
 
-pub fn move_monsters(state: &State) -> Vec<Monster> {
-    let mut ret = Vec::new(); //state.monsters;
-    let s_map = get_scent_map(state.map.map, state.player.pos);
+pub fn move_monsters(state: &mut State) {// -> Vec<Monster> {
     
-    for monster in state.monsters {
+    let s_map = get_scent_map(state.map.map.clone(), state.player.pos.clone());
 
-        let mut monster = monster;
+    for monster in &mut state.monsters {
+        let direction = look_around(&monster.pos, &s_map);
         
-        match look_around(monster.pos, &s_map) {  // known size problem
+        match direction {  // known size problem
             Up => monster.pos.x -= 1,
             Down => monster.pos.x += 1,
             Right => monster.pos.y += 1,
             Left => monster.pos.y -= 1,
         }
-        
-        ret.push(monster);
     }
-    
-    ret
 }
 
 
 /// returns where the monster sould move
-fn look_around(pos: Cord, scent_map: &Vec<Option<u32>>) -> Direction {  // known size problem
+fn look_around(pos: &Cord, scent_map: &Vec<Option<u32>>) -> Direction {  // known size problem
 
     let mut smallest = None;
     let mut ret = None;

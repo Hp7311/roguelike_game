@@ -9,12 +9,14 @@ use crossterm::{
     cursor::MoveTo,
     execute,
 };
+use log::info;
 
 use crate::map::Map;
 use crate::logs::Logs;
 use crate::entities::{
-    Player, Monster, move_monsters, handle_entities, delete_dead
+    Player, Monster, move_monsters, move_player, handle_entities, delete_dead
 };
+
 
 
 pub struct State {
@@ -28,7 +30,7 @@ pub struct State {
     pub game_lost: bool,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum Direction {
     Up,
     Down,
@@ -51,6 +53,7 @@ impl State {
     
     /// initalize map, logs
     pub fn init() -> Self {
+        info!("Reached init()");
         Self {
             map: Map::new(),
             logs: Logs::new(),
@@ -64,26 +67,30 @@ impl State {
     } 
     
     /// digs rooms and corridors
-    pub fn dig_floors(mut self) -> Result<Self, StateError> {
-        self.map.dig_rooms()?;
+    pub fn dig_floors(mut self) -> Self {
+        info!("Reached dig_floors()");
+        self.map.dig_rooms();
             
-        Ok(self)
+        self
     }
     
     /// check if version of map doable
     pub fn validate(self) -> Result<Self, StateError> {  // TODO actually validate
+        info!("Reached validate()");
         Ok(self)  // not important since rooms are hand drawn and connected
     }
     
     /// clear screen before game loop
-    pub fn clear_screen(&self) -> &Self {
-        execute!(stdout(), Clear(ClearType::All), MoveTo(0, 0));
-        
-        self  // will derefencing change self from &State to State?
+    pub fn clear_screen(&mut self) -> std::io::Result<&mut Self> {
+        execute!(stdout(), Clear(ClearType::All), MoveTo(0, 0)).unwrap();
+        info!("Reached clear_screen()");
+
+        Ok(self)  // will derefencing change self from &State to State?
     }
     
     /// modifys `move_dir` when received and clears log
     pub fn get_input(&mut self) -> std::io::Result<&mut Self> {
+        info!("Reached get_input()");
         use Direction::*;
         enable_raw_mode()?;
     
@@ -109,41 +116,50 @@ impl State {
     
     /// move monsters and player
     pub fn move_entities(&mut self) -> &mut Self {
-        self.player.move_to(&self);
+        info!("Reached move_entities()");
+        //self.player.move_to(&self);
+
+        move_player(self);
         
-        self.monsters = move_monsters(&self);
+        move_monsters(self);
         
         self
     }
     
     /// handle collisions, attacks etc
-    pub fn handle_entities(&mut self) -> Self {
-        handle_entities(&self)
+    pub fn handle_entities(&mut self) -> &mut Self {
+        info!("Reached handle_entities()");
+        handle_entities(self);
+        self
     }
     
     /// delete entities with health < 1, assign struct variants if won/lost
-    pub fn delete_dead(&mut self) -> Self {
-        delete_dead(&self)
+    pub fn delete_dead(&mut self) -> &mut Self {
+        info!("Reached delete_dead()");
+        delete_dead(self);
+        self
     }
     
     /// renders map, log, with entities (maybe last move?)
-    pub fn render(&self) -> &Self {
-        self.map.render();
-        self.player.render();
+    pub fn render(&mut self) -> std::io::Result<&mut Self> {
+        info!("Reached render()");
+        self.map.render()?;
+        self.player.render()?;
 
-        for monster in self.monsters {
-            monster.render();
+        for monster in &self.monsters {
+            monster.render()?;
         }
         
-        self.logs.render();
+        self.logs.render()?;
         
-        self  // trying derefencing, says &Self not Self
+        Ok(self)  // trying derefencing, says &Self not Self
     }
     
     /// performs re-initialization if lost/won
     pub fn handle_gameover(&mut self) -> Result<(), StateError>{  // correct signature?!
+        info!("Reached handle_gameover()");
         *self = Self::init()
-                .dig_floors()?
+                .dig_floors()
                 .validate()?;
 
         if self.game_won {

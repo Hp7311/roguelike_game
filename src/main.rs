@@ -14,15 +14,17 @@ use state::{State, StateError};
 
 fn main() -> Result<(), StateError> {
     
+    simple_logger::init().unwrap();
+
     let mut gs = State::init()
-        .dig_floors()?
+        .dig_floors()
         .validate()?;
 
         
     // turn-based game loop
     loop {
-        gs.clear_screen()
-            .render()
+        gs.clear_screen()?
+            .render()?
             .get_input()?
             .move_entities()
             .handle_entities()
@@ -34,10 +36,10 @@ fn main() -> Result<(), StateError> {
 // SOLVED disable dealing damage to monsters when -> Wall
 // SOLVED add monsters AI
 // SOLVED add monster name to log messages
-// SOLVED player has bonuses aganst certain monsters
-// SOLVED decide whether a version of map can be completed
+// TODO player has bonuses aganst certain monsters
+// No need: decide whether a version of map can be completed
 
-// SOLVED gold system
+// TODO gold system
 // SOLVED monster moves toward player
 // TODO monsters have different speed
 // SOLVED arrow keys to move

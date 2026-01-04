@@ -18,7 +18,7 @@ mod move_player;
 mod move_monster;
 mod handle;
 
-use move_player::move_player;
+pub use move_player::move_player;
 pub use move_monster::move_monsters;
 pub use handle::handle_entities;
 
@@ -34,6 +34,7 @@ pub struct Monster {
     info: MonsterInfo,
 }
 
+#[derive(Clone)]
 struct MonsterInfo {
     glyph: char,
     name: String,
@@ -48,11 +49,16 @@ impl Player {
         
         let mut chosen_index = 0;
         
-        loop {
-            chosen_index = *indexes.choose(&mut rng).unwrap();  // trying deref
-            if map.map[chosen_index] == Tile::Floor {
-                break;  // if spawn on floor
+        if map.map.iter().any(|tile| *tile == Tile::Floor) {
+            loop {
+                chosen_index = *indexes.choose(&mut rng).unwrap();  // trying deref
+                if map.map[chosen_index] == Tile::Floor {
+                    break;  // if spawn on floor
+                }
             }
+        }
+        else {  // not initialized yet
+            chosen_index = *indexes.choose(&mut rng).unwrap();
         }
         
         Self {
@@ -61,9 +67,6 @@ impl Player {
         }
     }
     
-    pub fn move_to(&mut self, state: &State) {
-        self.pos = move_player(self.pos, state);
-    }
     
     pub fn render(&self) -> std::io::Result<()> {
         let x = MAP_TOP_OFFSET + self.pos.x * 2;
@@ -89,11 +92,16 @@ impl Monster {
         
         for _ in 0..MONSTER_NUMBER {  // atomatically generate appriopriate num in fuuture
             
-            loop {
-                chosen_index = *indexes.choose(&mut rng).unwrap();  // deref for &Type and Type issue
-                if map.map[chosen_index] == Tile::Floor {
-                    break;
+            if map.map.iter().any(|tile| *tile == Tile::Floor) {
+                loop {
+                    chosen_index = *indexes.choose(&mut rng).unwrap();  // deref for &Type and Type issue
+                    if map.map[chosen_index] == Tile::Floor {
+                        break;
+                    }
                 }
+            }
+            else {  // not dug floors yet
+                chosen_index = *indexes.choose(&mut rng).unwrap();
             }
             
             monsters.push( Self {
@@ -104,10 +112,6 @@ impl Monster {
         }
         
         monsters
-    }
-    
-    pub fn move_to(&mut self, state: &State) -> Vec<Self> {
-        move_monsters(state)
     }
     
     /// prints a single monster
@@ -141,7 +145,7 @@ impl MonsterInfo {
 fn get_rand_monster() -> MonsterInfo {  // may say expected &--- found ---
     let mut rng = rand::rng();
     
-    *all_monsters_info().choose(&mut rng).unwrap()
+    all_monsters_info().choose(&mut rng).unwrap().clone()
 }
 
 
@@ -156,23 +160,17 @@ fn all_monsters_info() -> Vec<MonsterInfo> {
 
 
 /// delete dead units
-pub fn delete_dead(state: &State) -> State {
-    let mut ret = state;
+pub fn delete_dead(state: &mut State) {
     
-    if ret.player.hp <= 0 {
-        ret.game_lost = true;
-        return *ret;  // deref trying to convert &State to State
+    if state.player.hp <= 0 {
+        state.game_lost = true;
+        return;
     }
     
-    ret.monsters = Some(state.monsters.iter()
-        .filter(|&monster| monster.info.hp > 0)
-        .map(|&monster| monster)
-        .collect::<Vec<_>>()
-    );
+    state.monsters
+        .retain(|monster| monster.info.hp > 0);  // filter out dead monsters
     
-    if ret.monsters.len() == 0 {
-        ret.game_won = true;
-    }
-    
-    *ret  // deref trying to convert &State to State
+    if state.monsters.len() == 0 {
+        state.game_won = true;
+    };
 }

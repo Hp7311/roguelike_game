@@ -13,12 +13,11 @@ use rand::prelude::*;
 }*/
 
 /// digs rooms and connect them per constants.rs
-pub fn dig(map: Map) -> Result<Vec<Tile>, StateError> {  // TODO actual error handling
+pub fn dig(map: &mut Map) {  // TODO actual error handling
 
     let mut rng = rand::rng();
-    let mut ret = map.map;
 
-    let mut rects = Vec::new();
+    let mut rects: Vec<Rect> = Vec::new();
 
     // generate n number of rooms
     for room_num in 0..MAX_ROOM_NUM {
@@ -38,8 +37,8 @@ pub fn dig(map: Map) -> Result<Vec<Tile>, StateError> {  // TODO actual error ha
                 continue;
             }
 
-            for rect in rects {
-                if rect_built.overlaps_with(rect) {
+            for rect in &rects {
+                if rect_built.overlaps_with(rect.clone()) {
                     break;
                 }
                 doesnt_overlap.push(true)
@@ -58,7 +57,7 @@ pub fn dig(map: Map) -> Result<Vec<Tile>, StateError> {  // TODO actual error ha
         let all_pixels: Vec<Cord> = rects[room_num].get_all_pixels();
 
         for pixel in all_pixels {
-            ret[pixel.get_1d()] = Tile::Floor;
+            map.map[pixel.get_1d()] = Tile::Floor;
         }
     }
 
@@ -69,18 +68,15 @@ pub fn dig(map: Map) -> Result<Vec<Tile>, StateError> {  // TODO actual error ha
         center_cords.push(rect.get_center());
     }
 
-    let floors: Vec<Cord> = dig_regular_corridors(center_cords);
+    let floors: Vec<Cord> = dig_regular_corridors(center_cords.clone());
     floors.iter()
-        .for_each(|fl| ret[fl.get_1d()] = Tile::Floor);
+        .for_each(|fl| map.map[fl.get_1d()] = Tile::Floor);
 
-    let random_floors = dig_random_corridors(center_cords);
+    let random_floors = dig_random_corridors(center_cords.clone());
 
     for fl in random_floors {
-        ret[fl.get_1d()] = Tile::Floor
+        map.map[fl.get_1d()] = Tile::Floor
     }
-    
-    Ok(map: ret)
-    
 }
 
 enum Tunnel {
@@ -93,14 +89,14 @@ enum Tunnel {
 /// takes vector of Rect middle points, returns vector of floors that should be dug
 fn dig_regular_corridors(centers: Vec<Cord>) -> Vec<Cord> {
     let mut ret = Vec::new();
-    let mut previous_point = centers[0];
+    let mut previous_point = &centers[0];
     
     for point in &centers[1..] {
         if rand::random() {
-            ret.extend(dig_tunnel_general(previous_point, *point, Tunnel::Horizontal));
+            ret.extend(dig_tunnel_general(previous_point.clone(), point.clone(), Tunnel::Horizontal));
         }
         else {
-            ret.extend(dig_tunnel_general(previous_point, *point, Tunnel::Vertical));
+            ret.extend(dig_tunnel_general(previous_point.clone(), point.clone(), Tunnel::Vertical));
         }
     }
     
@@ -113,20 +109,20 @@ fn dig_random_corridors(centers: Vec<Cord>) -> Vec<Cord> {
     let mut ret = Vec::new();
     
     for _ in 0..RANDOM_CORRIDOR_NUM {
-        let first = *centers.choose(&mut rng).unwrap();
-        let mut second = *centers.choose(&mut rng).unwrap();
+        let first = centers.choose(&mut rng).unwrap().clone();
+        let mut second = centers.choose(&mut rng).unwrap().clone();
         loop {
             if second == first {
                 break;
             }
-            second = *centers.choose(&mut rng).unwrap();
+            second = centers.choose(&mut rng).unwrap().clone();
         }
         
         if rand::random() {
-            ret.extend(dig_tunnel_general(first, second, Tunnel::Horizontal));  // may still complain about expect &T got T
+            ret.extend(dig_tunnel_general(first.clone(), second.clone(), Tunnel::Horizontal));  // may still complain about expect &T got T
         }
         else {
-            ret.extend(dig_tunnel_general(first, second, Tunnel::Vertical));  // may still complain about expect &T got T
+            ret.extend(dig_tunnel_general(first.clone(), second.clone(), Tunnel::Vertical));  // may still complain about expect &T got T
         }
     }
     
@@ -165,12 +161,12 @@ fn dig_tunnel_general(point1: Cord, point2: Cord, dir: Tunnel) -> Vec<Cord> {
         });
     
     // determine where they intersect
-    let mut intersect: Cord;
+    let mut intersect = Cord::new(0, 0);  // not perfect
     
     point1_ext.iter()
-        .any(|&p1| {
+        .any(|p1| {
             if point2_ext.iter()
-                .any(|&p2| p1 == p2)
+                .any(|p2| p1 == p2)
             {
                 intersect = Cord::new(p1.x, p1.y);
                 return true
@@ -178,6 +174,7 @@ fn dig_tunnel_general(point1: Cord, point2: Cord, dir: Tunnel) -> Vec<Cord> {
             false
         });
     
+
     // push floors
     match dir {
         Horizontal => {  // point1 going horizonally
@@ -205,7 +202,7 @@ fn dig_tunnel_general(point1: Cord, point2: Cord, dir: Tunnel) -> Vec<Cord> {
                             true
                         }
                     })
-                    .map(|&cord| cord)
+                    .cloned()
                     .collect::<Vec<_>>() );
             }
             
@@ -215,12 +212,12 @@ fn dig_tunnel_general(point1: Cord, point2: Cord, dir: Tunnel) -> Vec<Cord> {
             
                 // push ___ part of tunnel
                 point1_ext.iter()
-                    .for_each(|&horiz_cords| {
+                    .for_each(|horiz_cords| {
                         if horiz_cords.y < point1.y || horiz_cords.y > intersect.y {
                             
                         }
                         else {
-                            ret.push(horiz_cords)  // hopefully fixes the expected Vec<&Cord> found Vec<Cord> issue
+                            ret.push(horiz_cords.clone())  // hopefully fixes the expected Vec<&Cord> found Vec<Cord> issue
                         }
                     });
                     
@@ -231,12 +228,12 @@ fn dig_tunnel_general(point1: Cord, point2: Cord, dir: Tunnel) -> Vec<Cord> {
                 if intersect.x > point2.y {
                 
                     point2_ext.iter()
-                        .for_each(|&vert_cords| {
+                        .for_each(|vert_cords| {
                             // using >= to not include intersect twice
                             if vert_cords.x < point2.y || vert_cords.x >= intersect.x {
                                 
                             } else {
-                                ret.push(vert_cords);
+                                ret.push(vert_cords.clone());
                             }
                         })
                 }
@@ -245,12 +242,12 @@ fn dig_tunnel_general(point1: Cord, point2: Cord, dir: Tunnel) -> Vec<Cord> {
                 else if intersect.x < point2.x {
                     
                     point2_ext.iter()
-                        .for_each(|&vert_cords| {
+                        .for_each(|vert_cords| {
                             if vert_cords.x <= intersect.x || vert_cords.x > point2.x {
                                 
                             }
                             else {
-                                ret.push(vert_cords);
+                                ret.push(vert_cords.clone());
                             }
                         })
                 }
@@ -271,12 +268,12 @@ fn dig_tunnel_general(point1: Cord, point2: Cord, dir: Tunnel) -> Vec<Cord> {
             
                 // push ____ part of tunnel
                 point1_ext.iter()
-                    .for_each(|&horiz_cords| {
+                    .for_each(|horiz_cords| {
                         if horiz_cords.y < intersect.y || horiz_cords.y > point1.y {
                             
                         }
                         else {
-                            ret.push(horiz_cords)
+                            ret.push(horiz_cords.clone())
                         }
                     });
                 
@@ -285,13 +282,13 @@ fn dig_tunnel_general(point1: Cord, point2: Cord, dir: Tunnel) -> Vec<Cord> {
                 // intersect below point2
                 if intersect.x > point2.x {
                     point2_ext.iter()
-                        .for_each(|&vert_cords| {
+                        .for_each(|vert_cords| {
                             // >= to avoid duplicate
                             if vert_cords.x < point2.x || vert_cords.x >= intersect.x {
                                 
                             }
                             else {
-                                ret.push(vert_cords);
+                                ret.push(vert_cords.clone());
                             }
                         })
                 }
@@ -299,12 +296,12 @@ fn dig_tunnel_general(point1: Cord, point2: Cord, dir: Tunnel) -> Vec<Cord> {
                 // intersect above point2
                 else if intersect.x < point2.x {
                     point2_ext.iter()
-                        .for_each(|&vert_cords| {
+                        .for_each(|vert_cords| {
                             if vert_cords.x <= intersect.x || vert_cords.x > point2.x {
                                 
                             }
                             else {
-                                ret.push(vert_cords);
+                                ret.push(vert_cords.clone());
                             }
                         })
                 }
@@ -355,7 +352,7 @@ fn dig_tunnel_general(point1: Cord, point2: Cord, dir: Tunnel) -> Vec<Cord> {
                             panic!("2 room centers same");
                         }
                     })
-                    .map(|&cord| cord)
+                    .cloned()
                     .collect::<Vec<_>>() );
             }
             
@@ -365,12 +362,12 @@ fn dig_tunnel_general(point1: Cord, point2: Cord, dir: Tunnel) -> Vec<Cord> {
             
                 // push ___ part of tunnel
                 point2_ext.iter()
-                    .for_each(|&horiz_cords| {
+                    .for_each(|horiz_cords| {
                         if horiz_cords.y < point2.y || horiz_cords.y > intersect.y {
                             
                         }
                         else {
-                            ret.push(horiz_cords);
+                            ret.push(horiz_cords.clone());
                         }
                     });
                     
@@ -381,12 +378,12 @@ fn dig_tunnel_general(point1: Cord, point2: Cord, dir: Tunnel) -> Vec<Cord> {
                 if intersect.x > point1.y {
                 
                     point1_ext.iter()
-                        .for_each(|&vert_cords| {
+                        .for_each(|vert_cords| {
                             // using >= to not include intersect twice
                             if vert_cords.x < point1.y || vert_cords.x >= intersect.x {
                                 
                             } else {
-                                ret.push(vert_cords);
+                                ret.push(vert_cords.clone());
                             }
                         })
                 }
@@ -394,12 +391,12 @@ fn dig_tunnel_general(point1: Cord, point2: Cord, dir: Tunnel) -> Vec<Cord> {
                 else if intersect.x < point1.x {
                     
                     point1_ext.iter()
-                        .for_each(|&vert_cords| {
+                        .for_each(|vert_cords| {
                             if vert_cords.x <= intersect.x || vert_cords.x > point1.x {
                                 
                             }
                             else {
-                                ret.push(vert_cords);
+                                ret.push(vert_cords.clone());
                             }
                         })
                 }
@@ -415,12 +412,12 @@ fn dig_tunnel_general(point1: Cord, point2: Cord, dir: Tunnel) -> Vec<Cord> {
             
                 // push ____ part of tunnel
                 point2_ext.iter()
-                    .for_each(|&horiz_cords| {
+                    .for_each(|horiz_cords| {
                         if horiz_cords.y < intersect.y || horiz_cords.y > point2.y {
                             
                         }
                         else {
-                            ret.push(horiz_cords);
+                            ret.push(horiz_cords.clone());
                         }
                     });
                 
@@ -429,13 +426,13 @@ fn dig_tunnel_general(point1: Cord, point2: Cord, dir: Tunnel) -> Vec<Cord> {
                 // intersect below point1
                 if intersect.x > point1.x {
                     point1_ext.iter()
-                        .for_each(|&vert_cords| {
+                        .for_each(|vert_cords| {
                             // >= to avoid duplicate
                             if vert_cords.x < point1.x || vert_cords.x >= intersect.x {
                                 
                             }
                             else {
-                                ret.push(vert_cords);
+                                ret.push(vert_cords.clone());
                             }
                         })
                 }
@@ -443,12 +440,12 @@ fn dig_tunnel_general(point1: Cord, point2: Cord, dir: Tunnel) -> Vec<Cord> {
                 // intersect above point1
                 else if intersect.x < point1.x {
                     point1_ext.iter()
-                        .for_each(|&vert_cords| {
+                        .for_each(|vert_cords| {
                             if vert_cords.x <= intersect.x || vert_cords.x > point1.x {
                                 
                             }
                             else {
-                                ret.push(vert_cords);
+                                ret.push(vert_cords.clone());
                             }
                         })
                 }

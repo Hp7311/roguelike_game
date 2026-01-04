@@ -39,8 +39,8 @@ impl Map {
     }
     
     /// dig rooms
-    pub fn dig_rooms(&mut self) -> Result<(), StateError> {
-        self.map = dig_map::dig(self)?  // from original map -> self should be all Wall
+    pub fn dig_rooms(&mut self) {
+        dig_map::dig(self)  // from original map -> self should be all Wall
     }
     
     /// render map
