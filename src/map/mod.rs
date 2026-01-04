@@ -1,6 +1,6 @@
 /// contains Map
 use crossterm::{
-    QueueableCommand
+    QueueableCommand,
     cursor::{
         MoveTo, MoveToNextLine
     },
@@ -39,31 +39,31 @@ impl Map {
     }
     
     /// dig rooms
-    pub fn dig_rooms(mut self) -> Result<Self, StateError> {
-        dig_map::dig(self)  // from original map -> self should be all Wall
+    pub fn dig_rooms(&mut self) -> Result<(), StateError> {
+        self.map = dig_map::dig(self)?  // from original map -> self should be all Wall
     }
     
     /// render map
-    pub fn render(&self) {
+    pub fn render(&self) -> std::io::Result<()> {
         let mut stdout = std::io::stdout();
 
-        stdout.queue(MoveTo(MAP_TOP_OFFSET + 1, 0));
+        stdout.queue(MoveTo((MAP_TOP_OFFSET + 1).try_into().unwrap(), 0))?
+            .queue( Print( format!("{}", "-".repeat(MAP_LENGTH * 4 + 1))) )?;
 
-        stdout.queue(Print( "{}", ("-".repeat(MAP_LENGTH * 4 + 1)) );
-        
         for (i, tile) in self.map.iter().enumerate() {
             print!("|");
             match tile {
-                Wall => stdout.queue(Print(" # |")),
-                Floor => stdout.queue(Print("   |")),
-            }
+                Wall => stdout.queue(Print(" # |"))?,
+                Floor => stdout.queue(Print("   |"))?,
+            };
             if (i + 1) % MAP_LENGTH == 0 {
-                stdout.queue(MoveToNextLine(1));
+                stdout.queue(MoveToNextLine(1))?;
             }
         }
 
-        stdout.queue(Print( "{}", ("-".repeat(MAP_LENGTH * 4 + 1)) ));
+        stdout.queue( Print( format!("{}", "-".repeat(MAP_LENGTH * 4 + 1))) )?;
         
-        stdout.flush();
+        stdout.flush()?;
+        Ok(())
     }
 }

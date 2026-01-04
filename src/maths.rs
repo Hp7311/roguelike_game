@@ -41,6 +41,11 @@ impl Cord {
     }
 }
 
+impl std::fmt::Display for Cord {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
 
 /// a Rectangle from start -> down/right
 pub struct Rect {

@@ -3,15 +3,15 @@ use crate::maths::Cord;
 use crate::map::{Map, Tile};
 use crate::state::{State, Direction};
 use crate::CONSTANTS::{
-    PLAYER_HEALTH, CURSOR_DRAW_MAP, MONSTER_NUMBER,
+    PLAYER_HEALTH, MAP_TOP_OFFSET, MONSTER_NUMBER,
 };
 
 use rand::prelude::*;
 use crossterm::{
-    execute,
+    QueueableCommand,
     cursor::MoveTo,
+    style::Print,
 };
-use std::io::stdout;
 use std::io::Write;
 
 mod move_player;
@@ -22,7 +22,7 @@ use move_player::move_player;
 pub use move_monster::move_monsters;
 pub use handle::handle_entities;
 
-
+#[derive(Clone)]
 pub struct Player {
     pos: Cord,
     hp: i32,
@@ -49,7 +49,7 @@ impl Player {
         let mut chosen_index = 0;
         
         loop {
-            chosen_index = indexes.choose(&mut rng).unwrap();  // maybe will be &Type and Type problem
+            chosen_index = *indexes.choose(&mut rng).unwrap();  // trying deref
             if map.map[chosen_index] == Tile::Floor {
                 break;  // if spawn on floor
             }
@@ -62,17 +62,19 @@ impl Player {
     }
     
     pub fn move_to(&mut self, state: &State) {
-        self.pos = move_player(self.pos.clone(), state);
+        self.pos = move_player(self.pos, state);
     }
     
-    pub fn render(&self) {
-        // TODO check doc for MoveTo parameter (w, l) or (l, w)
-        let x = CURSOR_DRAW_MAP + self.pos.x * 2;
-        let y = self.pos.y * 4 - 2; // - 1
-        execute!(stdout(), MoveTo(x, y));
-        
-        print!("@");
-        stdout().flush();
+    pub fn render(&self) -> std::io::Result<()> {
+        let x = MAP_TOP_OFFSET + self.pos.x * 2;
+        let y = self.pos.y * 4 - 1;
+        let mut stdout = std::io::stdout();
+
+        stdout.queue(MoveTo(x.try_into().unwrap(), y.try_into().unwrap()))?
+            .queue(Print("@"))?;
+        stdout.flush()?;
+
+        Ok(())
     }
 }
 
@@ -88,7 +90,7 @@ impl Monster {
         for _ in 0..MONSTER_NUMBER {  // atomatically generate appriopriate num in fuuture
             
             loop {
-                chosen_index = indexes.choose(&mut rng).unwrap();  // may still be &Type and Type issue
+                chosen_index = *indexes.choose(&mut rng).unwrap();  // deref for &Type and Type issue
                 if map.map[chosen_index] == Tile::Floor {
                     break;
                 }
@@ -104,19 +106,21 @@ impl Monster {
         monsters
     }
     
-    pub fn move_to(&mut self, state: &State) {
-        self.pos = move_monsters(self.pos, state);
+    pub fn move_to(&mut self, state: &State) -> Vec<Self> {
+        move_monsters(state)
     }
     
     /// prints a single monster
-    pub fn render(&self) {
-        let x = CURSOR_DRAW_MAP + self.pos.x * 2;
-        let y = self.pos.y * 4 - 2;  // - 1 ?
+    pub fn render(&self) -> std::io::Result<()> {
+        let x = MAP_TOP_OFFSET + self.pos.x * 2;
+        let y = self.pos.y * 4 - 1;
         
-        execute!(stdout(), MoveTo(x, y));
+        let mut stdout = std::io::stdout();
+        stdout.queue(MoveTo(x.try_into().unwrap(), y.try_into().unwrap()))?
+            .queue(Print(format!("{}", self.info.glyph)))?;
         
-        print!("{}", self.info.glyph);
-        stdout().flush();
+        stdout.flush()?;
+        Ok(())
     }
 }
 
@@ -137,7 +141,7 @@ impl MonsterInfo {
 fn get_rand_monster() -> MonsterInfo {  // may say expected &--- found ---
     let mut rng = rand::rng();
     
-    all_monsters_info().choose(&mut rng).unwrap()
+    *all_monsters_info().choose(&mut rng).unwrap()
 }
 
 
@@ -155,17 +159,18 @@ fn all_monsters_info() -> Vec<MonsterInfo> {
 pub fn delete_dead(state: &State) -> State {
     let mut ret = state;
     
-    if ret.player.unwrap().hp <= 0 {
+    if ret.player.hp <= 0 {
         ret.game_lost = true;
         return *ret;  // deref trying to convert &State to State
     }
     
-    ret.monsters = Some(state.monsters.unwrap().iter()
+    ret.monsters = Some(state.monsters.iter()
         .filter(|&monster| monster.info.hp > 0)
+        .map(|&monster| monster)
         .collect::<Vec<_>>()
     );
     
-    if ret.monsters.unwrap().len() == 0 {
+    if ret.monsters.len() == 0 {
         ret.game_won = true;
     }
     

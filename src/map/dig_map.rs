@@ -4,8 +4,7 @@ use crate::CONSTANTS::{
     MAP_LENGTH, MAP_WIDTH, RANDOM_CORRIDOR_NUM
 };
 use crate::maths::{Cord, Rect};
-use crate::map::Map;
-use crate::map::Tile;
+use crate::map::{Map, Tile};
 use crate::state::StateError;  // TODO temporary
 use rand::prelude::*;
 
@@ -14,73 +13,73 @@ use rand::prelude::*;
 }*/
 
 /// digs rooms and connect them per constants.rs
-pub fn dig(map: Map) -> Result<Map, StateError> {  // TODO actual error handling
-    
+pub fn dig(map: Map) -> Result<Vec<Tile>, StateError> {  // TODO actual error handling
+
     let mut rng = rand::rng();
-    let map = map.map;
     let mut ret = map.map;
-    
+
     let mut rects = Vec::new();
-    
+
     // generate n number of rooms
     for room_num in 0..MAX_ROOM_NUM {
-    
+
         loop {  // loop until satisfied
             let mut valid = false;
             let mut doesnt_overlap = Vec::new();
-            
+
             let width = rng.random_range(1..MAX_ROOM_WIDTH);
             let length = rng.random_range(1..MAX_ROOM_LENGTH);
-            let start_cords = Cord::new(rng.random_range(0..map.len()), rng.random_range(0..map.0.len()));
-            
+            let start_cords = Cord::new(rng.random_range(0..MAP_WIDTH), rng.random_range(0..MAP_LENGTH));
+
             let rect_built = Rect::new(start_cords, length, width);
-            
-            
+
+
             if !rect_built.can_fit() {
                 continue;
             }
-            
+
             for rect in rects {
                 if rect_built.overlaps_with(rect) {
                     break;
                 }
                 doesnt_overlap.push(true)
             }
-            
+
             if !(doesnt_overlap.len() == rects.len()) {
                 continue;
             }
-            
+
             // all fine, pushes the built room into Vec
             rects.push(rect_built);
             break;
         }
-        
+
         // draw the rect
         let all_pixels: Vec<Cord> = rects[room_num].get_all_pixels();
-        
-        all_pixels.iter()
-            .for_each(|&pixel| {
-                ret[pixel.x][pixel.y] = Tile::Floor;
-            })
+
+        for pixel in all_pixels {
+            ret[pixel.get_1d()] = Tile::Floor;
+        }
     }
-    
+
     // dig corridors
     let mut center_cords = Vec::new();
-    
+
     for rect in rects {
         center_cords.push(rect.get_center());
     }
-    
+
     let floors: Vec<Cord> = dig_regular_corridors(center_cords);
     floors.iter()
-        .for_each(|fl| ret[fl.x][fl.y] = Tile::Floor);
-        
+        .for_each(|fl| ret[fl.get_1d()] = Tile::Floor);
+
     let random_floors = dig_random_corridors(center_cords);
-    random_floors.iter()
-        .for_each(|fl| ret[fl.x][fl.y] = Tile::Floor);
+
+    for fl in random_floors {
+        ret[fl.get_1d()] = Tile::Floor
+    }
     
-    Ok(Map {map: ret})
+    Ok(map: ret)
     
 }
 
@@ -98,10 +97,10 @@ fn dig_regular_corridors(centers: Vec<Cord>) -> Vec<Cord> {
     
     for point in &centers[1..] {
         if rand::random() {
-            ret.extend(dig_tunnel_general(previous_point, point, Tunnel::Horizontal));
+            ret.extend(dig_tunnel_general(previous_point, *point, Tunnel::Horizontal));
         }
         else {
-            ret.extend(dig_tunnel_general(previous_point, point, Tunnel::Vertical));
+            ret.extend(dig_tunnel_general(previous_point, *point, Tunnel::Vertical));
         }
     }
     
@@ -114,13 +113,13 @@ fn dig_random_corridors(centers: Vec<Cord>) -> Vec<Cord> {
     let mut ret = Vec::new();
     
     for _ in 0..RANDOM_CORRIDOR_NUM {
-        let first = centers.choose(&mut rng).unwrap();
-        let mut second = centers.choose(&mut rng).unwrap();
+        let first = *centers.choose(&mut rng).unwrap();
+        let mut second = *centers.choose(&mut rng).unwrap();
         loop {
             if second == first {
                 break;
             }
-            second = centers.choose(&mut rng).unwrap();
+            second = *centers.choose(&mut rng).unwrap();
         }
         
         if rand::random() {

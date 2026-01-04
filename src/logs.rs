@@ -20,12 +20,17 @@ impl Logs {
         self.msg.push_str("\n");
     }
     
-    pub fn render(&self) {
+    pub fn render(&self) -> std::io::Result<()> {
         
         let mut stdout = std::io::stdout();
+        stdout.queue(cursor::MoveToNextLine(1))?
+            .queue(Print( format!("{}", self.msg) ))?;
 
-        stdout.queue(Print("{}", self.msg));
+        stdout.flush()?;
+        Ok(())
+    }
 
-        stdout.flush();
+    pub fn clear(&mut self) {
+        self.msg = String::new();
     }
 }

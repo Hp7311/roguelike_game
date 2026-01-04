@@ -13,7 +13,7 @@ use crossterm::{
 use crate::map::Map;
 use crate::logs::Logs;
 use crate::entities::{
-    Player, Monster, move_monsters, handle_entities
+    Player, Monster, move_monsters, handle_entities, delete_dead
 };
 
 
@@ -21,8 +21,8 @@ pub struct State {
     pub map: Map,
     pub logs: Logs,
     pub move_dir: Option<Direction>,
-    pub player: Option<Player>,
-    pub monsters: Option<Vec<Monster>>,
+    pub player: Player,
+    pub monsters: Vec<Monster>,
     
     pub game_won: bool,
     pub game_lost: bool,
@@ -41,6 +41,11 @@ pub enum StateError {  // TODO implement StateError and use it to handle errors 
     General(String),
 }
 
+impl From<std::io::Error> for StateError {
+    fn from(v: std::io::Error) -> Self {
+        StateError::General("I/O error".to_string())
+    }
+}
 
 impl State {
     
@@ -50,8 +55,8 @@ impl State {
             map: Map::new(),
             logs: Logs::new(),
             move_dir: None,
-            player: None,
-            monsters: None,
+            player: Player::spawn(&Map::new()),
+            monsters: Monster::spawn(&Map::new()),
             
             game_won: false,
             game_lost: false,
@@ -60,27 +65,9 @@ impl State {
     
     /// digs rooms and corridors
     pub fn dig_floors(mut self) -> Result<Self, StateError> {
-        self.map = self.map.dig_rooms()?;
+        self.map.dig_rooms()?;
             
         Ok(self)
-    }
-    
-    pub fn add_player(mut self) -> Self {
-    
-        if self.player.is_none() {
-            self.player = Some(Player::spawn(&self.map));
-        }
-        
-        self
-    }
-    
-    pub fn add_monsters(mut self) -> Self {
-        
-        if self.monsters.is_none() {
-            self.monsters = Some(Monster::spawn(&self.map));
-        }
-        
-        self
     }
     
     /// check if version of map doable
@@ -95,13 +82,13 @@ impl State {
         self  // will derefencing change self from &State to State?
     }
     
-    /// modifys `move_dir` when received
+    /// modifys `move_dir` when received and clears log
     pub fn get_input(&mut self) -> std::io::Result<&mut Self> {
         use Direction::*;
         enable_raw_mode()?;
     
         loop {
-            if let Event::Key(event) = read().unwrap() {
+            if let Event::Key(event) = read()? {
                 match event.code {
                     KeyCode::Up    | KeyCode::Char('w') => self.move_dir = Some(Up),
                     KeyCode::Down  | KeyCode::Char('s') => self.move_dir = Some(Down),
@@ -113,6 +100,8 @@ impl State {
             }
         }
         disable_raw_mode()?;
+
+        self.logs.clear();
     
         Ok(self)  // &mut self not supported?? trying self.clone()
     }
@@ -120,11 +109,11 @@ impl State {
     
     /// move monsters and player
     pub fn move_entities(&mut self) -> &mut Self {
-        self.player.unwrap().move_to(&self);  // not sure whether this will consume self and if it actually modifys
+        self.player.move_to(&self);
         
-        self.monsters = Some(move_monsters(&self));
+        self.monsters = move_monsters(&self);
         
-        self  // trying to borrow self, says &mut self not supported
+        self
     }
     
     /// handle collisions, attacks etc
@@ -134,14 +123,15 @@ impl State {
     
     /// delete entities with health < 1, assign struct variants if won/lost
     pub fn delete_dead(&mut self) -> Self {
-        crate::entities::delete_dead(&self)
+        delete_dead(&self)
     }
     
     /// renders map, log, with entities (maybe last move?)
     pub fn render(&self) -> &Self {
         self.map.render();
-        self.player.unwrap().render();
-        for monster in self.monsters.unwrap() {
+        self.player.render();
+
+        for monster in self.monsters {
             monster.render();
         }
         
@@ -151,22 +141,20 @@ impl State {
     }
     
     /// performs re-initialization if lost/won
-    pub fn handle_gameover(&mut self) {  // correct signature?!
+    pub fn handle_gameover(&mut self) -> Result<(), StateError>{  // correct signature?!
+        *self = Self::init()
+                .dig_floors()?
+                .validate()?;
+
         if self.game_won {
-            *self = Self::init()  // self::init() didn't work
-                .dig_floors().unwrap()  // TODO temporary
-                .add_player()
-                .add_monsters()
-                .validate().unwrap();  // TODO temporary
             self.logs.add_to_log("You won!");
         }
         else if self.game_lost {
-            *self = Self::init()
-                .dig_floors().unwrap()  // TODO temporary
-                .add_player()
-                .add_monsters()
-                .validate().unwrap();  // TODO temporary
             self.logs.add_to_log("You lost!");
         }
+        
+        Ok(())
     }
 }
+
+// DONE modify State to remove the unnecessary Option in player and monsters

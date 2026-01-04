@@ -6,7 +6,7 @@ use crate::CONSTANTS::{MAP_WIDTH, MAP_LENGTH};
 use crate::state::Direction::*;
 
 pub fn move_player(target: Cord, state: &State) -> Cord {
-    let direction = state.move_dir.unwrap();
+    let direction = state.move_dir.expect("No moving direction found in State");
     let (target_x, target_y) = (target.x as isize, target.y as isize);
     let moved_cords;
     
@@ -27,7 +27,7 @@ pub fn move_player(target: Cord, state: &State) -> Cord {
     if moved_cords.x >= MAP_WIDTH || moved_cords.y >= MAP_LENGTH {
         return target;
     }
-    let move_on_monster = state.monsters.unwrap()
+    let move_on_monster = state.monsters
         .iter()
         .any(|&m| m.pos == moved_cords);
     if move_on_monster {
