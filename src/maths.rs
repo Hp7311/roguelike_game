@@ -3,7 +3,7 @@ use crate::map::Map;
 use crate::CONSTANTS::{MAP_WIDTH, MAP_LENGTH};
 
 /// access 1D map wit 2D cords
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Cord {
     pub x: usize,
     pub y: usize,
@@ -46,8 +46,13 @@ impl std::fmt::Display for Cord {
         write!(f, "({}, {})", self.x, self.y)
     }
 }
+impl std::fmt::Display for Rect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Start at {}, down {}, right {}", self.start, self.width, self.length)
+    }
+}
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 /// a Rectangle from start -> down/right
 pub struct Rect {
     start: Cord,
@@ -67,27 +72,17 @@ impl Rect {
     
     /// checks if self overlaps with another Rect
     // PS maybe more lightweight method?
-    pub fn overlaps_with(&self, other: Self) -> bool {
-        let self_start = self.start.clone();
+    pub fn overlaps_with(&self, other: &Self) -> bool {
+
         let self_points = self.get_all_pixels();
-        
-        let other_start = other.start.clone();
         let other_points = other.get_all_pixels();
         
         
-        let overlap_points = self_points.iter()
+        self_points.iter()
             .any(|point| {
                 other_points.iter()
                     .any(|other_point| other_point == point )
-            });
-            
-            
-        // check if any overlap_points
-        if overlap_points {
-            false
-        } else {
-            true
-        }
+            })
     }
     
     
@@ -96,8 +91,8 @@ impl Rect {
     
         let start: Cord = self.start.clone();
         let right_lower: Cord = Cord::new(
-            start.x + self.width,
-            start.y + self.length
+            start.x + self.width - 1,
+            start.y + self.length - 1,
         );
         
         // PS this relies on map passed to this function being correctly built from CONSTANTS
@@ -115,8 +110,8 @@ impl Rect {
     pub fn get_all_pixels(&self) -> Vec<Cord> {
         let mut all_pixels = Vec::new();
         
-        for x in self.start.x..(self.start.x + self.width) {
-            for y in self.start.y..(self.start.y + self.length) {
+        for x in self.start.x..=(self.start.x + self.width - 1) {
+            for y in self.start.y..=(self.start.y + self.length - 1) {
                 all_pixels.push( Cord::new(x, y) );
             }
         }
@@ -130,5 +125,45 @@ impl Rect {
         let y = self.start.y + self.length / 2;
         
         Cord::new(x, y)
+    }
+}
+
+impl From<(usize, usize)> for Cord {
+    fn from(v: (usize, usize)) -> Self {
+        Self::new(v.0, v.1)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_overlap() {
+        /// test to see if overlap() working
+        let rect1 = Rect::new(
+            Cord::new(2, 2), 3, 4
+        );
+        let rect2 = Rect::new(
+            Cord::new(2, 2), 2, 3
+        );
+        assert_eq!(rect1.overlaps_with(&rect2), true);
+    }
+    #[test]
+    fn test_all_pixels() {
+        /// see if all_pixels working
+        let rect = Rect::new(
+            Cord::new(3, 2), 1, 2
+        );
+        let expected = vec![
+            Cord::from((3, 2)),
+            Cord::from((4, 2)),
+        ];
+        assert_eq!(rect.get_all_pixels(), expected);
+    }
+    #[test]
+    fn test_center() {
+        let rect = Rect::new(Cord::new(0, 0), 4, 4);
+
+        assert_eq!(rect.get_center(), Cord::new(2, 2));
     }
 }

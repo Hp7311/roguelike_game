@@ -10,11 +10,15 @@ mod gold;
 mod CONSTANTS;
 
 use state::{State, StateError};
+use log::LevelFilter;
+use simple_logger::SimpleLogger;
 
 
-fn main() -> Result<(), StateError> {
+fn main() -> anyhow::Result<()> {
     
-    simple_logger::init().unwrap();
+    SimpleLogger::new()
+        .with_level(LevelFilter::Off)
+        .init()?;
 
     let mut gs = State::init()
         .dig_floors()

@@ -47,14 +47,15 @@ impl Map {
     pub fn render(&self) -> std::io::Result<()> {
         let mut stdout = std::io::stdout();
 
-        stdout.queue(MoveTo((MAP_TOP_OFFSET + 1).try_into().unwrap(), 0))?
-            .queue( Print( format!("{}", "-".repeat(MAP_LENGTH * 4 + 1))) )?;
+        stdout.queue(MoveTo(0, (MAP_TOP_OFFSET + 1).try_into().unwrap()))?
+            .queue( Print( format!("{}", "-".repeat(MAP_LENGTH * 2 + 1))) )?
+            .queue( MoveToNextLine(1) )?;
 
         for (i, tile) in self.map.iter().enumerate() {
-            print!("|");
+            //print!("|");
             match tile {
-                Wall => stdout.queue(Print(" # |"))?,
-                Floor => stdout.queue(Print("   |"))?,
+                Wall => stdout.queue(Print(" #"))?,
+                Floor => stdout.queue(Print("  "))?,
             };
             if (i + 1) % MAP_LENGTH == 0 {
                 stdout.queue(MoveToNextLine(1))?;

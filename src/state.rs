@@ -10,6 +10,7 @@ use crossterm::{
     execute,
 };
 use log::info;
+use thiserror::Error;
 
 use crate::map::Map;
 use crate::logs::Logs;
@@ -38,8 +39,9 @@ pub enum Direction {
     Left,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum StateError {  // TODO implement StateError and use it to handle errors ( thiserror, anyhow )
+    #[error("General error: {0}")]
     General(String),
 }
 
@@ -82,15 +84,15 @@ impl State {
     
     /// clear screen before game loop
     pub fn clear_screen(&mut self) -> std::io::Result<&mut Self> {
-        execute!(stdout(), Clear(ClearType::All), MoveTo(0, 0)).unwrap();
         info!("Reached clear_screen()");
+        execute!(stdout(), Clear(ClearType::All), MoveTo(0, 0)).unwrap();
 
         Ok(self)  // will derefencing change self from &State to State?
     }
     
     /// modifys `move_dir` when received and clears log
     pub fn get_input(&mut self) -> std::io::Result<&mut Self> {
-        info!("Reached get_input()");
+        //z`info!("Reached get_input()");
         use Direction::*;
         enable_raw_mode()?;
     
@@ -120,7 +122,8 @@ impl State {
         //self.player.move_to(&self);
 
         move_player(self);
-        
+        info!("Passed move_player");
+
         move_monsters(self);
         
         self
@@ -142,7 +145,8 @@ impl State {
     
     /// renders map, log, with entities (maybe last move?)
     pub fn render(&mut self) -> std::io::Result<&mut Self> {
-        info!("Reached render()");
+        execute!(stdout(), MoveTo(0, 0));
+        //info!("Reached render()");
         self.map.render()?;
         self.player.render()?;
 
