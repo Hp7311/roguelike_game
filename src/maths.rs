@@ -9,6 +9,7 @@ pub struct Cord {
     pub y: usize,
 }
 
+
 impl Cord {
     pub fn new(x: usize, y: usize) -> Self {  // modify integer type
         Cord { x, y }

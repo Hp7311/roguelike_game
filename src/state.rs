@@ -9,7 +9,7 @@ use crossterm::{
     cursor::MoveTo,
     execute,
 };
-use log::info;
+use log::{info, Level};
 use thiserror::Error;
 
 use crate::map::Map;
@@ -72,6 +72,7 @@ impl State {
     pub fn dig_floors(mut self) -> Self {
         info!("Reached dig_floors()");
         self.map.dig_rooms();
+        self.player = Player::spawn(&self.map);
             
         self
     }
@@ -145,7 +146,8 @@ impl State {
     
     /// renders map, log, with entities (maybe last move?)
     pub fn render(&mut self) -> std::io::Result<&mut Self> {
-        execute!(stdout(), MoveTo(0, 0));
+
+        execute!(stdout(), MoveTo(0, 0))?;
         //info!("Reached render()");
         self.map.render()?;
         self.player.render()?;
@@ -156,6 +158,7 @@ impl State {
         
         self.logs.render()?;
         
+
         Ok(self)  // trying derefencing, says &Self not Self
     }
     

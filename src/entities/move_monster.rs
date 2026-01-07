@@ -6,16 +6,17 @@ use crate::maths::Cord;
 use crate::state::Direction;
 use Direction::*;
 use std::collections::{VecDeque, HashMap};
-use log::info;
+use log::{info, debug};
 
 /*[(i32, i32); 4] = [(0, 1), (1, 0), (0, -1), (-1, 0)];
 const NSWE_DIRS: [Direction; 4] = [Right, Down, Left, Up];*/
 
 
 pub fn move_monsters(state: &mut State) {// -> Vec<Monster> {
-    
+    debug!("Map: {:?}", state.map.map);
+    debug!("Player at: {}", state.player.pos);
     let s_map = get_scent_map(state.map.map.clone(), state.player.pos.clone());
-
+    debug!("Scent map: {:?}", s_map);
     for monster in &mut state.monsters {
         let direction = look_around(&monster.pos, &s_map);
         
@@ -34,7 +35,7 @@ fn look_around(pos: &Cord, scent_map: &Vec<Option<u32>>) -> Direction {  // know
 
     let mut smallest = None;
     let mut ret = None;
-    
+
     for (move_by, dir) in get_nswe() {
         let x = pos.x as i32 + move_by.0;  // problem accessing the tuple
         let y = pos.y as i32 + move_by.1;
@@ -46,7 +47,7 @@ fn look_around(pos: &Cord, scent_map: &Vec<Option<u32>>) -> Direction {  // know
         let shifted_cords = Cord::new(x as usize, y as usize);
         
         if let Some(tile) = scent_map.get(shifted_cords.get_1d())
-            && let Some(num) = tile {
+            && let Some(num) = *tile {
             
             if let Some(sm) = smallest {
                 if num < sm {
@@ -55,13 +56,13 @@ fn look_around(pos: &Cord, scent_map: &Vec<Option<u32>>) -> Direction {  // know
                 }
             }
             else {
-                smallest = Some(num)
+                smallest = Some(num);
+                ret = Some(dir);
             }
         }
-        info!("looked at dir")
     }
     
-    info!("Passed look_around");
+    info!("smallest for player: {:?}", smallest);
     ret.unwrap()
 }
 
@@ -90,10 +91,11 @@ fn get_scent_map(map: Vec<Tile>, player: Cord) -> Vec<Option<u32>> {
                 continue;
             }
             
-            let shifted_cords = Cord::new(x as usize, y as usize);
+            let shifted_cords = Cord::new(x as usize, y as usize);  // safe cast after non-negative
             
-            // if not out of bound
-            if let Some(tile) = map.get(shifted_cords.get_1d()) {
+            // if not out of bound or already covered
+            if let Some(tile) = map.get(shifted_cords.get_1d()) &&
+                let None = ret[shifted_cords.get_1d()] {
             
                 if *tile == Tile::Wall {  // looking on wall
                     continue;
@@ -119,4 +121,23 @@ fn get_nswe() -> HashMap<(i32, i32), Direction> {
         ((1, 0), Down),
         ((-1, 0), Up),
     ])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use Tile::*;
+    #[test]
+    fn test_scentmap() {
+        let test_map = vec![
+            Floor, Floor, Floor,
+            Floor, Floor, Floor,
+        ];
+        let expected = vec![
+            Some(1), Some(2), Some(3),
+            Some(0), Some(1), Some(2),
+        ];
+
+        assert_eq!(get_scent_map(test_map, Cord::new(1, 0)), expected)
+    }
 }

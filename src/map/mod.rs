@@ -16,7 +16,7 @@ use crate::CONSTANTS::{
 use crate::entities::{Player, Monster};
 use crate::state::StateError;  // TODO temporary
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Tile {
     Wall,
     Floor,
@@ -48,7 +48,7 @@ impl Map {
         let mut stdout = std::io::stdout();
 
         stdout.queue(MoveTo(0, (MAP_TOP_OFFSET + 1).try_into().unwrap()))?
-            .queue( Print( format!("{}", "-".repeat(MAP_LENGTH * 2 + 1))) )?
+            .queue( Print( format!("{}", "-".repeat(MAP_LENGTH * 2))) )?
             .queue( MoveToNextLine(1) )?;
 
         for (i, tile) in self.map.iter().enumerate() {

@@ -1,7 +1,5 @@
 pub const PLAYER_HEALTH: i32 = 100;
 pub const MONSTER_NUMBER: u32 = 4;
-pub const LENGTH: i32 = 26;
-pub const WIDTH: i32  = 26;
 pub const MAP_WIDTH: usize = 10;
 pub const MAP_LENGTH: usize = 10;
 pub const ATTACK_RANGE: u32 = 1;

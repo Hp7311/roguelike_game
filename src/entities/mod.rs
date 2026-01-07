@@ -69,8 +69,8 @@ impl Player {
     
     
     pub fn render(&self) -> std::io::Result<()> {
-        let x = MAP_TOP_OFFSET + (self.pos.x + 1) * 2;
-        let y = (self.pos.y + 1) * 2 - 1;
+        let x = MAP_TOP_OFFSET + self.pos.x + 2;
+        let y = (self.pos.y + 1) * 2;
         let mut stdout = std::io::stdout();
 
         stdout.queue(MoveTo(y.try_into().unwrap(), x.try_into().unwrap()))?
@@ -116,7 +116,7 @@ impl Monster {
     
     /// prints a single monster
     pub fn render(&self) -> std::io::Result<()> {
-        let x = MAP_TOP_OFFSET + (self.pos.x + 1);
+        let x = MAP_TOP_OFFSET + self.pos.x + 2;
         let y = (self.pos.y + 1) * 2;
         
         let mut stdout = std::io::stdout();

@@ -9,16 +9,13 @@ mod maths;
 mod gold;
 mod CONSTANTS;
 
-use state::{State, StateError};
-use log::LevelFilter;
-use simple_logger::SimpleLogger;
+use state::State;
+use log::Level;
 
 
 fn main() -> anyhow::Result<()> {
     
-    SimpleLogger::new()
-        .with_level(LevelFilter::Off)
-        .init()?;
+    simple_logger::init_with_level(Level::Error)?;
 
     let mut gs = State::init()
         .dig_floors()
@@ -27,7 +24,7 @@ fn main() -> anyhow::Result<()> {
         
     // turn-based game loop
     loop {
-        gs.clear_screen()?
+        let _ = gs.clear_screen()?
             .render()?
             .get_input()?
             .move_entities()
