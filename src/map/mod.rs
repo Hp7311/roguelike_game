@@ -62,7 +62,7 @@ impl Map {
             }
         }
 
-        stdout.queue( Print( format!("{}", "-".repeat(MAP_LENGTH * 4 + 1))) )?;
+        stdout.queue( Print( format!("{}", "-".repeat(MAP_LENGTH * 2))) )?;
         
         stdout.flush()?;
         Ok(())

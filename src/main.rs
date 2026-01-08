@@ -15,7 +15,7 @@ use log::Level;
 
 fn main() -> anyhow::Result<()> {
     
-    simple_logger::init_with_level(Level::Error)?;
+    simple_logger::init()?; //_with_level(Level::Error)?;
 
     let mut gs = State::init()
         .dig_floors()

@@ -71,8 +71,9 @@ impl State {
     /// digs rooms and corridors
     pub fn dig_floors(mut self) -> Self {
         info!("Reached dig_floors()");
-        self.map.dig_rooms();
+        self.map.dig_rooms(); // CRITICAL make State contan rooms for player and monster to spawn correctly
         self.player = Player::spawn(&self.map);
+        
             
         self
     }
@@ -123,7 +124,6 @@ impl State {
         //self.player.move_to(&self);
 
         move_player(self);
-        info!("Passed move_player");
 
         move_monsters(self);
         

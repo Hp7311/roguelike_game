@@ -56,7 +56,7 @@ pub fn dig(map: &mut Map) {  // TODO actual error handling
             map.map[pixel.get_1d()] = Tile::Floor;
         }
     }
-    info!("All rooms: {:#?}", rects);
+    
     // dig corridors
     let mut center_cords = Vec::new();
 
@@ -65,7 +65,6 @@ pub fn dig(map: &mut Map) {  // TODO actual error handling
         //info!("Got center cord {} of {}", rect.get_center(), rect)
     }
 
-    info!("Center cords: {:?}", center_cords);
 
     let floors: Vec<Cord> = dig_regular_corridors(center_cords.clone());
     for fl in floors {
@@ -99,10 +98,10 @@ fn dig_regular_corridors(centers: Vec<Cord>) -> Vec<Cord> {
         } else {
             Tunnel::Vertical
         };
-        info!("General: Got point1: {}, point2: {}", previous, current);
+        //info!("General: Got point1: {}, point2: {}", previous, current);
         let tunnel = dig_tunnel_general(&previous, &current, dir);
         ret.extend(tunnel);
-        info!("Success")
+        //info!("Success")
     }
     
     ret
@@ -122,14 +121,14 @@ fn dig_random_corridors(centers: Vec<Cord>) -> Vec<Cord> {
             }
             second = centers.choose(&mut rng).unwrap().clone();
         }
-        info!("Random: Got point1: {}, point2: {}", first, second);
+        //info!("Random: Got point1: {}, point2: {}", first, second);
         if rand::random() {
             ret.extend(dig_tunnel_general(&first, &second, Tunnel::Horizontal));  // may still complain about expect &T got T
         }
         else {
             ret.extend(dig_tunnel_general(&first, &second, Tunnel::Vertical));  // may still complain about expect &T got T
         }
-        info!("Success");
+        //info!("Success");
     }
     
     ret
