@@ -1,9 +1,9 @@
 /// math tools to help with position, drawing rooms etc
-use crate::map::Map;
-use crate::CONSTANTS::{MAP_WIDTH, MAP_LENGTH};
+use crate::constants::{MAP_WIDTH, MAP_LENGTH};
+use crate::entities::get_nswe;
 
 /// access 1D map wit 2D cords
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug, Copy)]
 pub struct Cord {
     pub x: usize,
     pub y: usize,
@@ -38,6 +38,24 @@ impl Cord {
             return true
         }
         
+        false
+    }
+
+    /// if other is right beside self mathematically
+    pub fn right_beside(&self, other: &Cord) -> bool {
+        for ((x, y), _) in get_nswe() {
+            let shift_x = self.x as i32+ x;
+            let shift_y = self.y as i32 + y;
+
+            if shift_x < 0 || shift_y < 0 { continue; }
+
+            let shifted = Cord::new(shift_x as usize, shift_y as usize);
+
+            if shifted == *other {
+                return true
+            }
+        }
+
         false
     }
 }
@@ -96,7 +114,7 @@ impl Rect {
             start.y + self.length - 1,
         );
         
-        // PS this relies on map passed to this function being correctly built from CONSTANTS
+        // PS this relies on map passed to this function being correctly built from constants
         if start.x >= MAP_WIDTH || start.y >= MAP_LENGTH {
             return false;
         }
@@ -107,6 +125,13 @@ impl Rect {
         true
     }
     
+    /// if point in rect
+    fn surrounds(&self, pos: &Cord) -> bool {
+        let all_pixels = self.get_all_pixels();
+
+        all_pixels.iter()
+            .any(|pixel| pixel == pos)
+    }
     /// returns Vec of all points in the rect
     pub fn get_all_pixels(&self) -> Vec<Cord> {
         let mut all_pixels = Vec::new();
@@ -134,6 +159,13 @@ impl From<(usize, usize)> for Cord {
         Self::new(v.0, v.1)
     }
 }
+
+pub fn check_cord_in_any_room(rooms: &Vec<Rect>, pos: Cord) -> bool {
+
+    rooms.iter()
+        .any(|room| room.surrounds(&pos))
+}
+
 
 #[cfg(test)]
 mod tests {

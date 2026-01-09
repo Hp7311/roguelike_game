@@ -10,9 +10,10 @@ use std::io::Write;
 
 mod dig_map;
 
-use crate::CONSTANTS::{
+use crate::constants::{
     MAP_WIDTH, MAP_LENGTH, MAP_TOP_OFFSET
 };
+use crate::maths::Rect;
 use crate::entities::{Player, Monster};
 use crate::state::StateError;  // TODO temporary
 
@@ -39,8 +40,8 @@ impl Map {
     }
     
     /// dig rooms
-    pub fn dig_rooms(&mut self) {
-        dig_map::dig(self)  // from original map -> self should be all Wall
+    pub fn dig_rooms(&mut self) -> Vec<Rect> {
+        dig_map::dig(self)
     }
     
     /// render map
@@ -65,6 +66,7 @@ impl Map {
         stdout.queue( Print( format!("{}", "-".repeat(MAP_LENGTH * 2))) )?;
         
         stdout.flush()?;
+
         Ok(())
     }
 }

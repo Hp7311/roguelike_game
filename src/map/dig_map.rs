@@ -1,5 +1,5 @@
 /// provides functions for drawing floors /*adding entities*/ on top of initial map
-use crate::CONSTANTS::{
+use crate::constants::{
     MAX_ROOM_NUM, MAX_ROOM_LENGTH, MAX_ROOM_WIDTH,
     MAP_LENGTH, MAP_WIDTH, RANDOM_CORRIDOR_NUM
 };
@@ -17,7 +17,7 @@ use std::collections::VecDeque;
 }*/
 
 /// digs rooms and connect them per constants.rs
-pub fn dig(map: &mut Map) {  // TODO actual error handling
+pub fn dig(map: &mut Map) -> Vec<Rect> {  // TODO actual error handling
 
     let mut rng = rand::rng();
 
@@ -60,13 +60,13 @@ pub fn dig(map: &mut Map) {  // TODO actual error handling
     // dig corridors
     let mut center_cords = Vec::new();
 
-    for rect in rects {
+    for rect in rects.iter() {
         center_cords.push(rect.get_center());
-        //info!("Got center cord {} of {}", rect.get_center(), rect)
     }
 
 
     let floors: Vec<Cord> = dig_regular_corridors(center_cords.clone());
+    
     for fl in floors {
         map.map[fl.get_1d()] = Tile::Floor;
     }
@@ -76,6 +76,9 @@ pub fn dig(map: &mut Map) {  // TODO actual error handling
     for fl in random_floors {
         map.map[fl.get_1d()] = Tile::Floor
     }
+
+    rects
+
 }
 
 enum Tunnel {

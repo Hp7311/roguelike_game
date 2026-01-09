@@ -1,9 +1,9 @@
 /// provides Player and Monster (in State)
-use crate::maths::Cord;
+use crate::maths::{Cord, Rect, check_cord_in_any_room};
 use crate::map::{Map, Tile};
 use crate::state::{State, Direction};
-use crate::CONSTANTS::{
-    PLAYER_HEALTH, MAP_TOP_OFFSET, MONSTER_NUMBER,
+use crate::constants::{
+    MAP_TOP_OFFSET, MAP_WIDTH, MONSTER_NUMBER, PLAYER_HEALTH
 };
 
 use rand::prelude::*;
@@ -13,7 +13,7 @@ use crossterm::{
     style::Print,
 };
 use std::io::Write;
-use log::error; // temporary
+use log::info;
 
 mod move_player;
 mod move_monster;
@@ -22,6 +22,7 @@ mod handle;
 pub use move_player::move_player;
 pub use move_monster::move_monsters;
 pub use handle::handle_entities;
+pub use move_monster::get_nswe;
 
 #[derive(Clone)]
 pub struct Player {
@@ -44,7 +45,12 @@ struct MonsterInfo {
 }
 
 impl Player {
-    pub fn spawn(map: &Map) -> Self {
+
+    pub fn get_pos(&self) -> Cord {
+        self.pos.clone()
+    }
+
+    pub fn spawn(map: &Map, rooms: &Vec<Rect>) -> Self {
         let mut rng = rand::rng();
         let indexes: Vec<_> = (0..map.map.len()).collect();
         
@@ -53,13 +59,13 @@ impl Player {
         if map.map.iter().any(|tile| *tile == Tile::Floor) {
             loop {
                 chosen_index = *indexes.choose(&mut rng).unwrap();  // trying deref
-                if map.map[chosen_index] == Tile::Floor {
+                if map.map[chosen_index] == Tile::Floor && check_cord_in_any_room(&rooms, Cord::from_1d(chosen_index)){
                     break;  // if spawn on floor
                 }
             }
         }
         else {  // not initialized yet
-            chosen_index = *indexes.choose(&mut rng).unwrap();
+            panic!("Map has no floor");
         }
         
         Self {
@@ -75,10 +81,11 @@ impl Player {
         let mut stdout = std::io::stdout();
 
         stdout.queue(MoveTo(y.try_into().unwrap(), x.try_into().unwrap()))?
-            .queue(Print("@"))?;
+            .queue(Print("@"))?
+            .queue(MoveTo(0, (MAP_TOP_OFFSET + MAP_WIDTH + 2) as u16))?;
         stdout.flush()?;
         
-        error!("Player at {}", self.pos);
+        info!("Player at {}", self.pos);
 
         Ok(())
     }
@@ -86,7 +93,7 @@ impl Player {
 
 
 impl Monster {
-    pub fn spawn(map: &Map) -> Vec<Self> {
+    pub fn spawn(map: &Map, rooms: &Vec<Rect>, player: &Cord) -> Vec<Self> {
         let mut rng = rand::rng();
         let indexes: Vec<_> = (0..map.map.len()).collect();
         let mut chosen_index = 0;
@@ -96,15 +103,21 @@ impl Monster {
         for _ in 0..MONSTER_NUMBER {  // atomatically generate appriopriate num in fuuture
             
             if map.map.iter().any(|tile| *tile == Tile::Floor) {
+
                 loop {
-                    chosen_index = *indexes.choose(&mut rng).unwrap();  // deref for &Type and Type issue
-                    if map.map[chosen_index] == Tile::Floor {
+                    chosen_index = *indexes.choose(&mut rng).unwrap();
+
+                    // validate chosen index
+                    if map.map[chosen_index] == Tile::Floor 
+                        && check_cord_in_any_room(rooms, Cord::from_1d(chosen_index))
+                        && (player.get_1d() != chosen_index) {  // does not spawn on player
+
                         break;
                     }
                 }
             }
             else {  // not dug floors yet
-                chosen_index = *indexes.choose(&mut rng).unwrap();
+                panic!("No floors in map");
             }
             
             monsters.push( Self {
@@ -120,7 +133,7 @@ impl Monster {
     /// prints a single monster
     pub fn render(&self) -> std::io::Result<()> {
         let x = MAP_TOP_OFFSET + self.pos.x + 2;
-        let y = (self.pos.y + 1) * 2;
+        let y = (self.pos.y + 1) * 2 - 1;
         
         let mut stdout = std::io::stdout();
         stdout.queue(MoveTo(y.try_into().unwrap(), x.try_into().unwrap()))?
@@ -157,7 +170,7 @@ fn all_monsters_info() -> Vec<MonsterInfo> {
     vec![
         MonsterInfo::new('G', "Globin", 10, 5),
         MonsterInfo::new('D', "Dalek", 30, 25),
-        MonsterInfo::new('D', "Dragon", 20, 20),
+        MonsterInfo::new('C', "Cyberman", 20, 20),
     ]
 }
 
@@ -165,15 +178,15 @@ fn all_monsters_info() -> Vec<MonsterInfo> {
 /// delete dead units
 pub fn delete_dead(state: &mut State) {
     
-    if state.player.hp <= 0 {
+    if state.player.as_ref().unwrap().hp <= 0 {
         state.game_lost = true;
         return;
     }
     
-    state.monsters
+    state.monsters.as_mut().unwrap()
         .retain(|monster| monster.info.hp > 0);  // filter out dead monsters
     
-    if state.monsters.len() == 0 {
+    if state.monsters.as_ref().unwrap().len() == 0 {
         state.game_won = true;
     };
 }

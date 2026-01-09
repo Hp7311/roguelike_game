@@ -4,6 +4,8 @@ use crossterm::{
 };
 use std::io::Write;
 
+use crate::constants::{MAP_WIDTH, MAP_TOP_OFFSET};
+
 pub struct Logs {
     msg: String,
 }
@@ -23,7 +25,9 @@ impl Logs {
     pub fn render(&self) -> std::io::Result<()> {
         
         let mut stdout = std::io::stdout();
-        stdout.queue(cursor::MoveToNextLine(1))?
+        stdout.queue(cursor::MoveTo(
+                0, (MAP_TOP_OFFSET + MAP_WIDTH + 2 + 4) as u16  // + 4 to avoid log messages in debug mode
+            ))?
             .queue(Print( format!("{}", self.msg) ))?;
 
         stdout.flush()?;

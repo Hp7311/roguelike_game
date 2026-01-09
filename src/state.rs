@@ -1,6 +1,6 @@
 /// core struct State used by main.rs
 
-use std::io::stdout;
+use std::{io::stdout, thread::spawn};
 use crossterm::{
     terminal::{
         Clear, ClearType, enable_raw_mode, disable_raw_mode
@@ -12,20 +12,22 @@ use crossterm::{
 use log::{info, Level};
 use thiserror::Error;
 
+use crate::constants::{MAP_TOP_OFFSET, MAP_WIDTH};
 use crate::map::Map;
 use crate::logs::Logs;
 use crate::entities::{
     Player, Monster, move_monsters, move_player, handle_entities, delete_dead
 };
-
+use crate::maths::Rect;
 
 
 pub struct State {
     pub map: Map,
     pub logs: Logs,
     pub move_dir: Option<Direction>,
-    pub player: Player,
-    pub monsters: Vec<Monster>,
+    pub player: Option<Player>,
+    pub monsters: Option<Vec<Monster>>,
+    rooms: Vec<Rect>,
     
     pub game_won: bool,
     pub game_lost: bool,
@@ -46,7 +48,7 @@ pub enum StateError {  // TODO implement StateError and use it to handle errors 
 }
 
 impl From<std::io::Error> for StateError {
-    fn from(v: std::io::Error) -> Self {
+    fn from(_: std::io::Error) -> Self {
         StateError::General("I/O error".to_string())
     }
 }
@@ -60,20 +62,25 @@ impl State {
             map: Map::new(),
             logs: Logs::new(),
             move_dir: None,
-            player: Player::spawn(&Map::new()),
-            monsters: Monster::spawn(&Map::new()),
+            player: None,
+            monsters: None,
+            rooms: Vec::new(),
             
             game_won: false,
             game_lost: false,
         }
-    } 
+    }
     
     /// digs rooms and corridors
     pub fn dig_floors(mut self) -> Self {
         info!("Reached dig_floors()");
-        self.map.dig_rooms(); // CRITICAL make State contan rooms for player and monster to spawn correctly
-        self.player = Player::spawn(&self.map);
-        
+        self.rooms = self.map.dig_rooms();
+        self.player = Some(Player::spawn(&self.map, &self.rooms));
+        self.monsters = Some(Monster::spawn(
+            &self.map,
+            &self.rooms,
+            &self.player.as_ref().unwrap().get_pos()
+        ));
             
         self
     }
@@ -94,8 +101,10 @@ impl State {
     
     /// modifys `move_dir` when received and clears log
     pub fn get_input(&mut self) -> std::io::Result<&mut Self> {
-        //z`info!("Reached get_input()");
+        //info!("Reached get_input()");
         use Direction::*;
+
+        execute!(stdout(), MoveTo(0, (MAP_TOP_OFFSET + MAP_WIDTH + 2) as u16))?;
         enable_raw_mode()?;
     
         loop {
@@ -105,6 +114,11 @@ impl State {
                     KeyCode::Down  | KeyCode::Char('s') => self.move_dir = Some(Down),
                     KeyCode::Left  | KeyCode::Char('a') => self.move_dir = Some(Left),
                     KeyCode::Right | KeyCode::Char('d') => self.move_dir = Some(Right),
+                    KeyCode::Esc   | KeyCode::Char('q') => {
+                        disable_raw_mode()?;
+                        execute!(stdout(), MoveTo(0, (MAP_TOP_OFFSET + MAP_WIDTH + 2 + 5) as u16))?;  // avoid covering logs
+                        std::process::exit(1);
+                    },
                     _ => continue,
                 }
                 break;
@@ -145,14 +159,15 @@ impl State {
     }
     
     /// renders map, log, with entities (maybe last move?)
-    pub fn render(&mut self) -> std::io::Result<&mut Self> {
+    pub fn render(&mut self) -> anyhow::Result<&mut Self> {
 
         execute!(stdout(), MoveTo(0, 0))?;
         //info!("Reached render()");
         self.map.render()?;
-        self.player.render()?;
+        self.player.as_ref().unwrap()
+            .render()?;
 
-        for monster in &self.monsters {
+        for monster in self.monsters.as_ref().unwrap() {
             monster.render()?;
         }
         
@@ -165,15 +180,17 @@ impl State {
     /// performs re-initialization if lost/won
     pub fn handle_gameover(&mut self) -> Result<(), StateError>{  // correct signature?!
         info!("Reached handle_gameover()");
-        *self = Self::init()
-                .dig_floors()
-                .validate()?;
+        if self.game_lost || self.game_won {
+            *self = Self::init()
+                    .dig_floors()
+                    .validate()?;
 
-        if self.game_won {
-            self.logs.add_to_log("You won!");
-        }
-        else if self.game_lost {
-            self.logs.add_to_log("You lost!");
+            if self.game_won {
+                self.logs.add_to_log("You won!");
+            }
+            else if self.game_lost {
+                self.logs.add_to_log("You lost!");
+            }
         }
         
         Ok(())

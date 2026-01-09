@@ -12,15 +12,24 @@ use log::{info, debug};
 const NSWE_DIRS: [Direction; 4] = [Right, Down, Left, Up];*/
 
 
-pub fn move_monsters(state: &mut State) {// -> Vec<Monster> {
-    //debug!("Map: {:?}", state.map.map);
-    //debug!("Player at: {}", state.player.pos);
-    let s_map = get_scent_map(state.map.map.clone(), state.player.pos.clone());
+pub fn move_monsters(state: &mut State) {
+
+    let s_map = get_scent_map(
+        state.map.map.clone(), state.player.as_ref().unwrap().pos.clone()
+    );
     debug!("Scent map: {:?}", s_map);
-    for monster in &mut state.monsters {
+    for monster in state.monsters.as_mut().unwrap() {
+
         let direction = look_around(&monster.pos, &s_map);
         
-        match direction {  // known size problem
+        // if player right beside
+        if state.player.as_ref().unwrap().pos.clone()
+            .right_beside(&monster.pos) {
+
+            return;
+        }
+
+        match direction {
             Up => monster.pos.x -= 1,
             Down => monster.pos.x += 1,
             Right => monster.pos.y += 1,
@@ -47,7 +56,8 @@ fn look_around(pos: &Cord, scent_map: &Vec<Option<u32>>) -> Direction {  // know
         let shifted_cords = Cord::new(x as usize, y as usize);
         
         if let Some(tile) = scent_map.get(shifted_cords.get_1d())
-            && let Some(num) = *tile {
+            && let Some(num) = *tile
+            && (scent_map[shifted_cords.get_1d()] != Some(0)) {  // not moving on player
             
             if let Some(sm) = smallest {
                 if num < sm {
@@ -114,7 +124,7 @@ fn get_scent_map(map: Vec<Tile>, player: Cord) -> Vec<Option<u32>> {
 }
 
 
-fn get_nswe() -> HashMap<(i32, i32), Direction> {
+pub fn get_nswe() -> HashMap<(i32, i32), Direction> {
     HashMap::from([
         ((0, 1), Right),
         ((0, -1), Left),
@@ -122,6 +132,7 @@ fn get_nswe() -> HashMap<(i32, i32), Direction> {
         ((-1, 0), Up),
     ])
 }
+
 
 #[cfg(test)]
 mod tests {

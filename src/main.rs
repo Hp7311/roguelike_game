@@ -7,7 +7,7 @@ mod logs;
 
 mod maths;
 mod gold;
-mod CONSTANTS;
+mod constants;
 
 use state::State;
 use log::Level;
@@ -15,7 +15,7 @@ use log::Level;
 
 fn main() -> anyhow::Result<()> {
     
-    simple_logger::init()?; //_with_level(Level::Error)?;
+    env_logger::init(); //_with_level(Level::Error)?;
 
     let mut gs = State::init()
         .dig_floors()
@@ -24,13 +24,13 @@ fn main() -> anyhow::Result<()> {
         
     // turn-based game loop
     loop {
-        let _ = gs.clear_screen()?
+        gs.clear_screen()?
             .render()?
             .get_input()?
             .move_entities()
             .handle_entities()
             .delete_dead()
-            .handle_gameover();
+            .handle_gameover()?;
     }
 }
 

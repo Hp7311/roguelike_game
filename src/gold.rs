@@ -21,7 +21,6 @@ fn get_gold_amount() -> std::io::Result<u32> {
 pub fn add_to_gold(amount: u32) -> std::io::Result<()> {
     let gold = get_gold();
     let total = gold + amount;
-    println!("New gold amount: {}", total);
     write_to_gold_file(total)?;
     Ok(())
 }
