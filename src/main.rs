@@ -10,12 +10,11 @@ mod gold;
 mod constants;
 
 use state::State;
-use log::Level;
 
 
 fn main() -> anyhow::Result<()> {
     
-    env_logger::init(); //_with_level(Level::Error)?;
+    env_logger::init();
 
     let mut gs = State::init()
         .dig_floors()

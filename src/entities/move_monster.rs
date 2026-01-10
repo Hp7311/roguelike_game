@@ -1,9 +1,7 @@
 /// handles moving monsters logic using a scent map
 use crate::state::State;
-use crate::entities::Monster;
-use crate::map::{Map, Tile};
-use crate::maths::Cord;
-use crate::state::Direction;
+use crate::map::Tile;
+use crate::maths::{Cord, Direction};
 use Direction::*;
 use std::collections::{VecDeque, HashMap};
 use log::{info, debug};

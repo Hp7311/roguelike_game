@@ -1,7 +1,7 @@
 /// provides Player and Monster (in State)
 use crate::maths::{Cord, Rect, check_cord_in_any_room};
 use crate::map::{Map, Tile};
-use crate::state::{State, Direction};
+use crate::state::State;
 use crate::constants::{
     MAP_TOP_OFFSET, MAP_WIDTH, MONSTER_NUMBER, PLAYER_HEALTH
 };
@@ -32,7 +32,7 @@ pub struct Player {
 
 
 pub struct Monster {
-    pos: Cord,
+    pub pos: Cord,
     info: MonsterInfo,
 }
 
@@ -52,7 +52,7 @@ impl Player {
 
     pub fn spawn(map: &Map, rooms: &Vec<Rect>) -> Self {
         let mut rng = rand::rng();
-        let indexes: Vec<_> = (0..map.map.len()).collect();
+        let indexes = (0..map.map.len()).collect::<Vec<_>>();
         
         let mut chosen_index = 0;
         
@@ -100,7 +100,7 @@ impl Monster {
         
         let mut monsters = Vec::new();
         
-        for _ in 0..MONSTER_NUMBER {  // atomatically generate appriopriate num in fuuture
+        for _ in 0..MONSTER_NUMBER {
             
             if map.map.iter().any(|tile| *tile == Tile::Floor) {
 
@@ -109,8 +109,9 @@ impl Monster {
 
                     // validate chosen index
                     if map.map[chosen_index] == Tile::Floor 
-                        && check_cord_in_any_room(rooms, Cord::from_1d(chosen_index))
-                        && (player.get_1d() != chosen_index) {  // does not spawn on player
+                        && check_cord_in_any_room(rooms, Cord::from_1d(chosen_index)) // spawns in a room
+                        && (player.get_1d() != chosen_index)                               // does not spawn on player
+                        && !(Cord::from_1d(chosen_index).in_vec(&monsters)) {                 // does not spawn on another monster
 
                         break;
                     }

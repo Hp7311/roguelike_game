@@ -1,9 +1,8 @@
 /// functions to do with moving player
-use crate::map::{Map, Tile};
-use crate::maths::Cord;
+use crate::map::Tile;
+use crate::maths::{Cord, Direction::*};
 use crate::state::State;
 use crate::constants::{MAP_WIDTH, MAP_LENGTH};
-use crate::state::Direction::*;
 
 pub fn move_player(state: &mut State)  {
     let direction = state.move_dir.clone().expect("No moving direction found in State");

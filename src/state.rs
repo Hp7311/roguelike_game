@@ -1,6 +1,6 @@
 /// core struct State used by main.rs
 
-use std::{io::stdout, thread::spawn};
+use std::io::stdout;
 use crossterm::{
     terminal::{
         Clear, ClearType, enable_raw_mode, disable_raw_mode
@@ -9,7 +9,7 @@ use crossterm::{
     cursor::MoveTo,
     execute,
 };
-use log::{info, Level};
+use log::info;
 use thiserror::Error;
 
 use crate::constants::{MAP_TOP_OFFSET, MAP_WIDTH};
@@ -18,7 +18,9 @@ use crate::logs::Logs;
 use crate::entities::{
     Player, Monster, move_monsters, move_player, handle_entities, delete_dead
 };
-use crate::maths::Rect;
+use crate::maths::{
+    Rect, Direction::*, Direction,
+};
 
 
 pub struct State {
@@ -33,13 +35,6 @@ pub struct State {
     pub game_lost: bool,
 }
 
-#[derive(PartialEq, Clone)]
-pub enum Direction {
-    Up,
-    Down,
-    Right,
-    Left,
-}
 
 #[derive(Debug, Error)]
 pub enum StateError {  // TODO implement StateError and use it to handle errors ( thiserror, anyhow )
@@ -75,12 +70,15 @@ impl State {
     pub fn dig_floors(mut self) -> Self {
         info!("Reached dig_floors()");
         self.rooms = self.map.dig_rooms();
+        info!("Dug rooms");
         self.player = Some(Player::spawn(&self.map, &self.rooms));
+        info!("Spawned players");
         self.monsters = Some(Monster::spawn(
             &self.map,
             &self.rooms,
             &self.player.as_ref().unwrap().get_pos()
         ));
+        info!("Spawned monsters");
             
         self
     }
@@ -102,7 +100,6 @@ impl State {
     /// modifys `move_dir` when received and clears log
     pub fn get_input(&mut self) -> std::io::Result<&mut Self> {
         //info!("Reached get_input()");
-        use Direction::*;
 
         execute!(stdout(), MoveTo(0, (MAP_TOP_OFFSET + MAP_WIDTH + 2) as u16))?;
         enable_raw_mode()?;
@@ -178,7 +175,7 @@ impl State {
     }
     
     /// performs re-initialization if lost/won
-    pub fn handle_gameover(&mut self) -> Result<(), StateError>{  // correct signature?!
+    pub fn handle_gameover(&mut self) -> Result<(), StateError> {  // correct signature?!
         info!("Reached handle_gameover()");
         if self.game_lost || self.game_won {
             *self = Self::init()

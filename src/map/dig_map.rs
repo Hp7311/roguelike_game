@@ -23,7 +23,7 @@ pub fn dig(map: &mut Map) -> Vec<Rect> {  // TODO actual error handling
 
     let mut rects: Vec<Rect> = Vec::new();
 
-    // generate n number of rooms
+    // ROOMS
 
     for room_num in 0..MAX_ROOM_NUM {
 
@@ -57,7 +57,7 @@ pub fn dig(map: &mut Map) -> Vec<Rect> {  // TODO actual error handling
         }
     }
     
-    // dig corridors
+    // CORRIDORS
     let mut center_cords = Vec::new();
 
     for rect in rects.iter() {
@@ -76,6 +76,7 @@ pub fn dig(map: &mut Map) -> Vec<Rect> {  // TODO actual error handling
     for fl in random_floors {
         map.map[fl.get_1d()] = Tile::Floor
     }
+    info!("dig() returns");
 
     rects
 

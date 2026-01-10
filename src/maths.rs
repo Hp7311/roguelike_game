@@ -1,6 +1,6 @@
 /// math tools to help with position, drawing rooms etc
 use crate::constants::{MAP_WIDTH, MAP_LENGTH};
-use crate::entities::get_nswe;
+use crate::entities::{Monster, get_nswe};
 
 /// access 1D map wit 2D cords
 #[derive(PartialEq, Clone, Debug, Copy)]
@@ -58,6 +58,13 @@ impl Cord {
 
         false
     }
+
+    /// if the point is in a Vec of monsters
+    pub fn in_vec(&self, v: &Vec<Monster>) -> bool {
+
+        v.iter()
+            .any(|s| s.pos == *self)
+    }
 }
 
 impl std::fmt::Display for Cord {
@@ -90,7 +97,6 @@ impl Rect {
     }
     
     /// checks if self overlaps with another Rect
-    // PS maybe more lightweight method?
     pub fn overlaps_with(&self, other: &Self) -> bool {
 
         let self_points = self.get_all_pixels();
@@ -153,6 +159,16 @@ impl Rect {
         Cord::new(x, y)
     }
 }
+
+
+#[derive(PartialEq, Clone)]
+pub enum Direction {
+    Up,
+    Down,
+    Right,
+    Left,
+}
+
 
 impl From<(usize, usize)> for Cord {
     fn from(v: (usize, usize)) -> Self {
