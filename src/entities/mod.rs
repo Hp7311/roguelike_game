@@ -5,6 +5,7 @@ use crate::state::State;
 use crate::constants::{
     MAP_TOP_OFFSET, MAP_WIDTH, MONSTER_NUMBER, PLAYER_HEALTH
 };
+use crate::errors::SpawnError;
 
 use rand::prelude::*;
 use crossterm::{
@@ -24,19 +25,21 @@ pub use move_monster::move_monsters;
 pub use handle::handle_entities;
 pub use move_monster::get_nswe;
 
-#[derive(Clone)]
+
+#[derive(Clone, Debug)]
 pub struct Player {
-    pos: Cord,
+    pub pos: Cord,
     hp: i32,
 }
 
-
+#[derive(Clone, Debug)]
 pub struct Monster {
     pub pos: Cord,
     info: MonsterInfo,
 }
 
-#[derive(Clone)]
+
+#[derive(Clone, Debug)]
 struct MonsterInfo {
     glyph: char,
     name: String,
@@ -50,7 +53,7 @@ impl Player {
         self.pos.clone()
     }
 
-    pub fn spawn(map: &Map, rooms: &Vec<Rect>) -> Self {
+    pub fn spawn(map: &Map, rooms: &Vec<Rect>) -> Result<Self, SpawnError> {
         let mut rng = rand::rng();
         let indexes = (0..map.map.len()).collect::<Vec<_>>();
         
@@ -65,13 +68,13 @@ impl Player {
             }
         }
         else {  // not initialized yet
-            panic!("Map has no floor");
+            return Err(SpawnError::NotFound(format!("{:?}",Tile::Floor)));
         }
         
-        Self {
+        Ok( Self {
             pos: Cord::from_1d(chosen_index),
             hp: PLAYER_HEALTH,
-        }
+        } )
     }
     
     
@@ -85,7 +88,7 @@ impl Player {
             .queue(MoveTo(0, (MAP_TOP_OFFSET + MAP_WIDTH + 2) as u16))?;
         stdout.flush()?;
         
-        info!("Player at {}", self.pos);
+        //info!("Player at {}", self.pos);
 
         Ok(())
     }
@@ -93,7 +96,7 @@ impl Player {
 
 
 impl Monster {
-    pub fn spawn(map: &Map, rooms: &Vec<Rect>, player: &Cord) -> Vec<Self> {
+    pub fn spawn(map: &Map, rooms: &Vec<Rect>, player: &Cord) -> Result<Vec<Self>, SpawnError> {
         let mut rng = rand::rng();
         let indexes: Vec<_> = (0..map.map.len()).collect();
         let mut chosen_index = 0;
@@ -108,17 +111,17 @@ impl Monster {
                     chosen_index = *indexes.choose(&mut rng).unwrap();
 
                     // validate chosen index
-                    if map.map[chosen_index] == Tile::Floor 
-                        && check_cord_in_any_room(rooms, Cord::from_1d(chosen_index)) // spawns in a room
+                    if (map.map[chosen_index] == Tile::Floor) 
+                        && (check_cord_in_any_room(rooms, Cord::from_1d(chosen_index))) // spawns in a room
                         && (player.get_1d() != chosen_index)                               // does not spawn on player
                         && !(Cord::from_1d(chosen_index).in_vec(&monsters)) {                 // does not spawn on another monster
-
+                        
                         break;
                     }
                 }
             }
             else {  // not dug floors yet
-                panic!("No floors in map");
+                return Err(SpawnError::NotFound(format!("{:?}", Tile::Floor)))
             }
             
             monsters.push( Self {
@@ -128,7 +131,7 @@ impl Monster {
             
         }
         
-        monsters
+        Ok(monsters)
     }
     
     /// prints a single monster

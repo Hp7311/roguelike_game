@@ -10,12 +10,11 @@ use std::io::Write;
 
 mod dig_map;
 
-use crate::constants::{
-    MAP_WIDTH, MAP_LENGTH, MAP_TOP_OFFSET
-};
+use crate::{constants::{
+    MAP_LENGTH, MAP_TOP_OFFSET, MAP_WIDTH
+}, errors::BuildError};
 use crate::maths::Rect;
 use crate::entities::{Player, Monster};
-use crate::state::StateError;  // TODO temporary
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Tile {
@@ -26,6 +25,7 @@ pub enum Tile {
 use Tile::*;
 
 /// main Map struct containing Wall or Floor
+#[derive(Debug)]
 pub struct Map {
     pub map: Vec<Tile>,
 }
@@ -40,7 +40,7 @@ impl Map {
     }
     
     /// dig rooms
-    pub fn dig_rooms(&mut self) -> Vec<Rect> {
+    pub fn dig_rooms(&mut self) -> Result<Vec<Rect>, BuildError> {
         dig_map::dig(self)
     }
     

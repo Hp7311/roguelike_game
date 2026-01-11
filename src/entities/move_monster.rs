@@ -2,6 +2,7 @@
 use crate::state::State;
 use crate::map::Tile;
 use crate::maths::{Cord, Direction};
+use crate::errors::SpawnError;
 use Direction::*;
 use std::collections::{VecDeque, HashMap};
 use log::{info, debug};
@@ -10,7 +11,7 @@ use log::{info, debug};
 const NSWE_DIRS: [Direction; 4] = [Right, Down, Left, Up];*/
 
 
-pub fn move_monsters(state: &mut State) {
+pub fn move_monsters(state: &mut State) -> Result<(), SpawnError> {
 
     let s_map = get_scent_map(
         state.map.map.clone(), state.player.as_ref().unwrap().pos.clone()
@@ -18,13 +19,13 @@ pub fn move_monsters(state: &mut State) {
     debug!("Scent map: {:?}", s_map);
     for monster in state.monsters.as_mut().unwrap() {
 
-        let direction = look_around(&monster.pos, &s_map);
+        let direction = look_around(&monster.pos, &s_map)?;
         
         // if player right beside
         if state.player.as_ref().unwrap().pos.clone()
             .right_beside(&monster.pos) {
 
-            return;
+            return Ok(());
         }
 
         match direction {
@@ -34,11 +35,13 @@ pub fn move_monsters(state: &mut State) {
             Left => monster.pos.y -= 1,
         }
     }
+
+    Ok(())
 }
 
 
 /// returns where the monster sould move
-fn look_around(pos: &Cord, scent_map: &Vec<Option<u32>>) -> Direction {  // known size problem
+fn look_around(pos: &Cord, scent_map: &Vec<Option<u32>>) -> Result<Direction, SpawnError> {  // known size problem
 
     let mut smallest = None;
     let mut ret = None;
@@ -70,8 +73,14 @@ fn look_around(pos: &Cord, scent_map: &Vec<Option<u32>>) -> Direction {  // know
         }
     }
     
-    //info!("smallest for player: {:?}", smallest);
-    ret.unwrap()
+    if ret.is_none() {
+        return Err(SpawnError::InvalidPlace(
+            format!("Monster surrounded by walls."),
+            *pos
+        ))
+    }
+
+    Ok(ret.unwrap())
 }
 
 

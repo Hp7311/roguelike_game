@@ -6,6 +6,7 @@ use std::io::Write;
 
 use crate::constants::{MAP_WIDTH, MAP_TOP_OFFSET};
 
+#[derive(Debug)]
 pub struct Logs {
     msg: String,
 }

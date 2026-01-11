@@ -5,19 +5,19 @@ use crate::constants::{
 };
 use crate::maths::{Cord, Rect};
 use crate::map::{Map, Tile};
-use crate::state::StateError;  // TODO temporary
+use crate::errors::BuildError;
+
 use rand::prelude::*;
 use log::{
     debug, info
 };
-use std::collections::VecDeque;
 
 /*pub enum BuildError {  // TODO implement it
     General(String),
 }*/
 
 /// digs rooms and connect them per constants.rs
-pub fn dig(map: &mut Map) -> Vec<Rect> {  // TODO actual error handling
+pub fn dig(map: &mut Map) -> Result<Vec<Rect>, BuildError> {  // TODO actual error handling
 
     let mut rng = rand::rng();
 
@@ -44,7 +44,7 @@ pub fn dig(map: &mut Map) -> Vec<Rect> {  // TODO actual error handling
             }
 
             // all fine, pushes the built room into Vec
-            info!("Room: {}", rect_built);
+            //info!("Room: {}", rect_built);
             rects.push(rect_built);
             break;
         }
@@ -65,20 +65,20 @@ pub fn dig(map: &mut Map) -> Vec<Rect> {  // TODO actual error handling
     }
 
 
-    let floors: Vec<Cord> = dig_regular_corridors(center_cords.clone());
+    let floors: Vec<Cord> = dig_regular_corridors(center_cords.clone())?;
     
     for fl in floors {
         map.map[fl.get_1d()] = Tile::Floor;
     }
 
-    let random_floors = dig_random_corridors(center_cords.clone());
+    let random_floors = dig_random_corridors(center_cords.clone())?;
 
     for fl in random_floors {
         map.map[fl.get_1d()] = Tile::Floor
     }
-    info!("dig() returns");
 
-    rects
+
+    Ok(rects)
 
 }
 
@@ -90,7 +90,7 @@ enum Tunnel {
 
 
 /// takes vector of Rect middle points, returns vector of floors that should be dug
-fn dig_regular_corridors(centers: Vec<Cord>) -> Vec<Cord> {
+fn dig_regular_corridors(centers: Vec<Cord>) -> Result<Vec<Cord>, BuildError> {
     let mut ret = Vec::new();
 
     for pair in centers.windows(2) {
@@ -102,17 +102,17 @@ fn dig_regular_corridors(centers: Vec<Cord>) -> Vec<Cord> {
         } else {
             Tunnel::Vertical
         };
-        //info!("General: Got point1: {}, point2: {}", previous, current);
-        let tunnel = dig_tunnel_general(&previous, &current, dir);
+        
+        let tunnel = dig_tunnel_general(&previous, &current, dir)?;
         ret.extend(tunnel);
-        //info!("Success")
+        
     }
     
-    ret
+    Ok(ret)
 }
 
 
-fn dig_random_corridors(centers: Vec<Cord>) -> Vec<Cord> {
+fn dig_random_corridors(centers: Vec<Cord>) -> Result<Vec<Cord>, BuildError> {
     let mut rng = rand::rng();
     let mut ret = Vec::new();
     
@@ -127,20 +127,20 @@ fn dig_random_corridors(centers: Vec<Cord>) -> Vec<Cord> {
         }
         //info!("Random: Got point1: {}, point2: {}", first, second);
         if rand::random() {
-            ret.extend(dig_tunnel_general(&first, &second, Tunnel::Horizontal));  // may still complain about expect &T got T
+            ret.extend(dig_tunnel_general(&first, &second, Tunnel::Horizontal)?);  // may still complain about expect &T got T
         }
         else {
-            ret.extend(dig_tunnel_general(&first, &second, Tunnel::Vertical));  // may still complain about expect &T got T
+            ret.extend(dig_tunnel_general(&first, &second, Tunnel::Vertical)?);  // may still complain about expect &T got T
         }
         //info!("Success");
     }
     
-    ret
+    Ok(ret)
 }
 
 
 /// Main operating func on digging corridors. takes two points and return cords that should be dug -> floor
-fn dig_tunnel_general(point1: &Cord, point2: &Cord, dir: Tunnel) -> Vec<Cord> {
+fn dig_tunnel_general(point1: &Cord, point2: &Cord, dir: Tunnel) -> Result<Vec<Cord>, BuildError> {
     use Tunnel::*;
 
     // extend the two points based on rand and `dir`
@@ -266,7 +266,9 @@ fn dig_tunnel_general(point1: &Cord, point2: &Cord, dir: Tunnel) -> Vec<Cord> {
                 }
                 
                 else {
-                    panic!("Impossible two rooms with same center");
+                    return Err(BuildError::RoomCenterSame(
+                        format!("Point1: {}, Point2: {}", point1, point2)
+                    ));
                 }
             }
             
@@ -320,13 +322,17 @@ fn dig_tunnel_general(point1: &Cord, point2: &Cord, dir: Tunnel) -> Vec<Cord> {
                 }
                 
                 else {
-                    panic!("Two rooms with same center point??!");
+                    return Err(BuildError::RoomCenterSame(
+                        format!("Point1: {}, Point2: {}", point1, point2)
+                    ));
                 }
             }
             
             // impossible
             else {
-                panic!("Two rooms with same center point??!");
+                return Err(BuildError::RoomCenterSame(
+                    format!("Point1: {}, Point2: {}", point1, point2)
+                ));
             }
         },
         
@@ -356,7 +362,7 @@ fn dig_tunnel_general(point1: &Cord, point2: &Cord, dir: Tunnel) -> Vec<Cord> {
                             true
                         }
                         else {
-                            panic!("2 room centers same");
+                            panic!();  // can't return a BuildError here
                         }
                     })
                     .cloned()
@@ -413,7 +419,9 @@ fn dig_tunnel_general(point1: &Cord, point2: &Cord, dir: Tunnel) -> Vec<Cord> {
                 }
 
                 else {
-                    panic!("Impossible two rooms with same center");
+                    return Err(BuildError::RoomCenterSame(
+                        format!("Point1: {}, Point2: {}", point1, point2)
+                    ));
                 }
             }
             
@@ -466,16 +474,21 @@ fn dig_tunnel_general(point1: &Cord, point2: &Cord, dir: Tunnel) -> Vec<Cord> {
                 }
                 
                 else {
-                    panic!("Two rooms with same center point??!");
+                    return Err(BuildError::RoomCenterSame(
+                        format!("Point1: {}, Point2: {}", point1, point2)
+                    ));
                 }
             }
             
             // impossible
             else {
-                panic!("Two rooms with same center point??!");
+                return Err(BuildError::RoomCenterSame(
+                    format!("Point1: {}, Point2: {}", point1, point2)
+                ));
             }
         },
     }
     
-    ret
+    Ok(ret)
+
 }

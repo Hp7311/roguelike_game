@@ -22,8 +22,8 @@ impl Cord {
     
     /// get 2D index from flat index
     pub fn from_1d(i: usize) -> Self {
-        let x = i % MAP_WIDTH;
-        let y = i / MAP_WIDTH;
+        let y = i % MAP_WIDTH;
+        let x = i / MAP_WIDTH;
         
         Self { x, y }
     }
@@ -161,7 +161,7 @@ impl Rect {
 }
 
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Direction {
     Up,
     Down,

@@ -8,6 +8,7 @@ mod logs;
 mod maths;
 mod gold;
 mod constants;
+mod errors;
 
 use state::State;
 
@@ -17,7 +18,7 @@ fn main() -> anyhow::Result<()> {
     env_logger::init();
 
     let mut gs = State::init()
-        .dig_floors()
+        .dig_floors()?
         .validate()?;
 
         
@@ -26,7 +27,7 @@ fn main() -> anyhow::Result<()> {
         gs.clear_screen()?
             .render()?
             .get_input()?
-            .move_entities()
+            .move_entities()?
             .handle_entities()
             .delete_dead()
             .handle_gameover()?;
