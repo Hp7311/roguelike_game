@@ -1,3 +1,5 @@
+use std::error;
+
 /// error enums for unified access
 use thiserror::Error;
 use crate::maths::Cord;
@@ -18,9 +20,7 @@ pub enum SpawnError {
     InvalidPlace(String, Cord),
 }
 
-#[derive(Debug, Error)]
-pub enum OutOfBoundError {
-    #[error("{0}")]
-    OutOfBound(String),
-    
-}
+/* TODOs: 
+add FOV
+health bar
+coloured text :)) */

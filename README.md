@@ -1,5 +1,5 @@
 ## Status
-In development. Cannot be used
+In development.
 
 ## Description
 Roguelike game in ASCII.
@@ -11,8 +11,9 @@ cd roguelike_game
 cargo run
 ```
 
-## Adjusting stats
-map's width and length: `constants.rs`.  
-player's health: `constants.rs`.  
-number of monsters: `constants.rs`.  
-vector of monsters to choose from: `entities::mod.rs` in `get_monsters`.
+## Stats
+in `constants.rs` and monsters in `entities::all_monsters_info`
+
+## Architecture
+1D map of `Wall`s and `Floor`s with `Player` and `Monster` struct,    
+`main.rs` only interacts with `State` struct.

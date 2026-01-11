@@ -10,4 +10,4 @@ pub const MAX_ROOM_WIDTH: usize = 7;
 pub const RANDOM_CORRIDOR_NUM: u32 = 4;
 pub const MAP_TOP_OFFSET: usize = 3;  // gold, health, blank
 
-/* sometimes stuck in spawning monsters. often player having same location as one of the monsters */
+/* sometimes stuck in spawning monsters. */

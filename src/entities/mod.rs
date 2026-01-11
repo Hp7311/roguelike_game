@@ -83,9 +83,11 @@ impl Player {
         let y = (self.pos.y + 1) * 2 - 1;
         let mut stdout = std::io::stdout();
 
-        stdout.queue(MoveTo(y.try_into().unwrap(), x.try_into().unwrap()))?
-            .queue(Print("@"))?
-            .queue(MoveTo(0, (MAP_TOP_OFFSET + MAP_WIDTH + 2) as u16))?;
+        stdout.queue(MoveTo(0, 1))?  // hardcoded
+            .queue(Print(format!("HP: {}", self.hp)))?
+
+            .queue(MoveTo(y.try_into().unwrap(), x.try_into().unwrap()))?
+            .queue(Print("@"))?;
         stdout.flush()?;
         
         //info!("Player at {}", self.pos);

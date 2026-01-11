@@ -3,7 +3,7 @@ use crate::map::Tile;
 use crate::maths::{Cord, Direction::*};
 use crate::state::State;
 use crate::constants::{MAP_WIDTH, MAP_LENGTH};
-use crate::errors::{SpawnError, OutOfBoundError};
+use crate::errors::SpawnError;
 
 pub fn move_player(state: &mut State) -> anyhow::Result<()> {
     let direction = match state.move_dir.clone() {
@@ -26,18 +26,14 @@ pub fn move_player(state: &mut State) -> anyhow::Result<()> {
     }
     
     if moved_cords.0 < 0 || moved_cords.1 < 0 {  // moving out of bound
-        return Err(OutOfBoundError::OutOfBound(
-            format!("Player moving to {:?}", moved_cords)
-        ).into());
+        return Ok(())
     }
 
     // convert to usize Cord after checking
     let moved_cords = Cord::new(moved_cords.0 as usize, moved_cords.1 as usize);
     
     if moved_cords.x >= MAP_WIDTH || moved_cords.y >= MAP_LENGTH {  // moving out of bound
-        return Err(OutOfBoundError::OutOfBound(
-            format!("Player moving to {}", moved_cords)
-        ).into());
+        return Ok(())
     }
 
     if state.map.map[moved_cords.get_1d()] == Tile::Wall {  // moving on wall

@@ -69,10 +69,10 @@ impl State {
         info!("Spawned monsters");
 
         // debugging
-        self.logs.add_to_log(&format!("\nPlayer at {}", self.player.as_ref().unwrap().pos));
+        /*self.logs.add_to_log(&format!("\nPlayer at {}", self.player.as_ref().unwrap().pos));
         for monster in self.monsters.as_ref().unwrap().iter() {
             self.logs.add_to_log(&format!("Monster at {}", monster.pos));
-        }
+        }*/
             
         Ok(self)
     }
@@ -127,6 +127,7 @@ impl State {
         disable_raw_mode()?;
 
         self.logs.clear();
+        
     
         Ok(self)  // &mut self not supported?? trying self.clone()
     }
@@ -179,23 +180,34 @@ impl State {
     }
     
     /// performs re-initialization if lost/won
-    pub fn handle_gameover(&mut self) -> anyhow::Result<()> {  // correct signature?!
+    pub fn handle_gameover(&mut self) -> anyhow::Result<()> {
+        use GameOver::*;
+        
         info!("Reached handle_gameover()");
-        if self.game_lost || self.game_won {
-            *self = Self::init()
-                .dig_floors()?
-                .validate()?;  // duplicates with main
 
-            if self.game_won {
-                self.logs.add_to_log("You won!");
-            }
-            else if self.game_lost {
-                self.logs.add_to_log("You lost!");
-            }
+        let game_over = if self.game_lost {
+            Lost
+        } else if self.game_won {
+            Won
+        } else {
+            return Ok(())
+        };
+        
+        *self = Self::init()
+            .dig_floors()?
+            .validate()?;
+
+        match game_over {
+            Won => self.logs.add_to_log("You won!\nRestarting..."),
+            Lost => self.logs.add_to_log("You lost!\nRestarting..."),
         }
+        
         
         Ok(())
     }
 }
 
-// DONE modify State to remove the unnecessary Option in player and monsters
+enum GameOver {
+    Lost,
+    Won,
+}
