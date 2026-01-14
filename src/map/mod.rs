@@ -4,8 +4,11 @@ use crossterm::{
     cursor::{
         MoveTo, MoveToNextLine
     },
-    style::Print,
+    style::{
+        Print, SetForegroundColor, Color, ResetColor
+    },
 };
+use std::io;
 use std::io::Write;
 
 mod dig_map;
@@ -44,8 +47,8 @@ impl Map {
     }
     
     /// render map
-    pub fn render(&self) -> std::io::Result<()> {
-        let mut stdout = std::io::stdout();
+    pub fn render(&self) -> io::Result<()> {
+        let mut stdout = io::stdout();
 
         stdout.queue(MoveTo(0, (MAP_TOP_OFFSET + 1).try_into().unwrap()))?;
         stdout.queue( Print( format!("{}", "-".repeat(MAP_LENGTH * 2))) )?
@@ -54,8 +57,14 @@ impl Map {
         for (i, tile) in self.map.iter().enumerate() {
             //print!("|");
             match tile {
-                Wall => stdout.queue(Print(" #"))?,
-                Floor => stdout.queue(Print("  "))?,
+                Wall => {
+                    stdout.queue(SetForegroundColor(Color::Grey))?
+                        .queue(Print(" #"))?
+                        .queue(ResetColor)?
+                },
+                Floor => {
+                    stdout.queue(Print("  "))?
+                },
             };
             if (i + 1) % MAP_LENGTH == 0 {
                 stdout.queue(MoveToNextLine(1))?;

@@ -4,6 +4,7 @@ mod state;
 mod entities;
 mod map;
 mod logs;
+mod validate;
 
 mod maths;
 mod gold;
@@ -24,8 +25,9 @@ fn main() -> anyhow::Result<()> {
         
     // turn-based game loop
     loop {
-        gs.clear_screen()?
-            .render()?
+        gs.clear_screen()?;
+        gs.render()?;
+        gs
             .get_input()?
             .move_entities()?
             .handle_entities()

@@ -1,8 +1,6 @@
-use std::error;
-
 /// error enums for unified access
 use thiserror::Error;
-use crate::maths::Cord;
+use crate::maths::{Cord, Rect};
 
 /// map::dig_map
 #[derive(Debug, Error)]
@@ -20,7 +18,20 @@ pub enum SpawnError {
     InvalidPlace(String, Cord),
 }
 
+#[derive(Debug, Error)]
+pub enum ValidateError {
+    #[error("Map invalid: {0}")]
+    MapErr(String),
+    #[error("Room isolated: {0}")]
+    RoomIsolatedError(Rect),
+    #[error("Player invalid at {1}: {0}")]
+    PlayerErr(String, Cord),
+    #[error("Monster invalid at {1}: {0}")]
+    MonsterErr(String, Cord),
+}
 /* TODOs: 
 add FOV
 health bar
-coloured text :)) */
+fix map width != length issue
+implement validate
+*/

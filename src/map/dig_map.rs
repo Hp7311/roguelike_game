@@ -12,12 +12,9 @@ use log::{
     debug, info
 };
 
-/*pub enum BuildError {  // TODO implement it
-    General(String),
-}*/
 
 /// digs rooms and connect them per constants.rs
-pub fn dig(map: &mut Map) -> Result<Vec<Rect>, BuildError> {  // TODO actual error handling
+pub fn dig(map: &mut Map) -> Result<Vec<Rect>, BuildError> {
 
     let mut rng = rand::rng();
 
@@ -44,7 +41,6 @@ pub fn dig(map: &mut Map) -> Result<Vec<Rect>, BuildError> {  // TODO actual err
             }
 
             // all fine, pushes the built room into Vec
-            //info!("Room: {}", rect_built);
             rects.push(rect_built);
             break;
         }
@@ -170,7 +166,7 @@ fn dig_tunnel_general(point1: &Cord, point2: &Cord, dir: Tunnel) -> Result<Vec<C
         });  // not idiomatic
     
     // determine where they intersect
-    let mut intersect = Cord::new(0, 0);  // not perfect
+    let mut intersect = Cord::new(0, 0);
     
     point1_ext.iter()
         .any(|p1| {

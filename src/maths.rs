@@ -65,16 +65,12 @@ impl Cord {
         v.iter()
             .any(|s| s.pos == *self)
     }
-}
 
-impl std::fmt::Display for Cord {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({}, {})", self.x, self.y)
-    }
-}
-impl std::fmt::Display for Rect {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Start at {}, down {}, right {}", self.start, self.width, self.length)
+    pub fn in_rect(&self, rect: &Rect) -> bool {
+
+        rect.get_all_pixels()
+            .iter()
+            .any(|r| r == self)
     }
 }
 
@@ -138,6 +134,7 @@ impl Rect {
         all_pixels.iter()
             .any(|pixel| pixel == pos)
     }
+    
     /// returns Vec of all points in the rect
     pub fn get_all_pixels(&self) -> Vec<Cord> {
         let mut all_pixels = Vec::new();
@@ -158,6 +155,45 @@ impl Rect {
         
         Cord::new(x, y)
     }
+
+    pub fn get_edges(&self) -> Vec<Cord> {
+        let mut ret = Vec::new();
+
+        let start = self.start;
+
+        let right_lower = Cord::new(
+            start.x + self.width - 1,
+            start.y + self.length - 1,
+        );
+
+        // push horizontals
+        for y in start.y..right_lower.y {
+            ret.push(
+                Cord::new(start.x, y)
+            );
+            ret.push(
+                Cord::new(right_lower.x, y)
+            );
+        }
+
+        // push verticals
+        for x in start.x..right_lower.x {
+
+            // avoid duplicates
+            if x == start.x || x == right_lower.x {
+                continue;
+            }
+
+            ret.push(
+                Cord::new(x, start.y)
+            );
+            ret.push(
+                Cord::new(x, right_lower.y)
+            );
+        }
+
+        ret
+    }
 }
 
 
@@ -176,10 +212,22 @@ impl From<(usize, usize)> for Cord {
     }
 }
 
-pub fn check_cord_in_any_room(rooms: &Vec<Rect>, pos: Cord) -> bool {
+pub fn check_in_any_room(rooms: &Vec<Rect>, pos: Cord) -> bool {
 
     rooms.iter()
         .any(|room| room.surrounds(&pos))
+}
+
+
+impl std::fmt::Display for Cord {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+impl std::fmt::Display for Rect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Start at {}, down {}, right {}", self.start, self.width, self.length)
+    }
 }
 
 
@@ -188,7 +236,7 @@ mod tests {
     use super::*;
     #[test]
     fn test_overlap() {
-        /// test to see if overlap() working
+        // test to see if overlap() working
         let rect1 = Rect::new(
             Cord::new(2, 2), 3, 4
         );
@@ -199,7 +247,7 @@ mod tests {
     }
     #[test]
     fn test_all_pixels() {
-        /// see if all_pixels working
+        // see if all_pixels working
         let rect = Rect::new(
             Cord::new(3, 2), 1, 2
         );

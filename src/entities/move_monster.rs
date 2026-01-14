@@ -126,7 +126,7 @@ fn get_scent_map(map: Vec<Tile>, player: Cord) -> Vec<Option<u32>> {
             }
         }
     }
-    //info!("Got scent map");
+    
     ret
 }
 

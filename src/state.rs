@@ -21,6 +21,8 @@ use crate::gold::render_gold;
 use crate::maths::{
     Rect, Direction::*, Direction,
 };
+use crate::validate::validate_state;
+use crate::errors::ValidateError;
 
 
 pub struct State {
@@ -29,7 +31,7 @@ pub struct State {
     pub move_dir: Option<Direction>,
     pub player: Option<Player>,
     pub monsters: Option<Vec<Monster>>,
-    rooms: Vec<Rect>,
+    pub rooms: Vec<Rect>,
     
     pub game_won: bool,
     pub game_lost: bool,
@@ -58,29 +60,23 @@ impl State {
     pub fn dig_floors(mut self) -> anyhow::Result<Self> {
         info!("Reached dig_floors()");
         self.rooms = self.map.dig_rooms()?;
-        info!("Dug rooms");
-        self.player = Some(Player::spawn(&self.map, &self.rooms)?);
-        info!("Spawned players");
-        self.monsters = Some(Monster::spawn(
+        self.player = Some( Player::spawn(&self.map, &self.rooms)? );
+        
+        self.monsters = Some( Monster::spawn(
             &self.map,
             &self.rooms,
             &self.player.as_ref().unwrap().get_pos()
-        )?);
-        info!("Spawned monsters");
-
-        // debugging
-        /*self.logs.add_to_log(&format!("\nPlayer at {}", self.player.as_ref().unwrap().pos));
-        for monster in self.monsters.as_ref().unwrap().iter() {
-            self.logs.add_to_log(&format!("Monster at {}", monster.pos));
-        }*/
+        )? );
             
         Ok(self)
     }
     
     /// check if version of map doable
-    pub fn validate(self) -> anyhow::Result<Self> {  // TODO actually validate
+    pub fn validate(self) -> Result<Self, ValidateError> {  // TODO actually validate
         info!("Reached validate()");
-        Ok(self)  // not important since rooms are hand drawn and connected
+
+        
+        validate_state(self)
     }
     
     /// clear screen before game loop
@@ -160,7 +156,7 @@ impl State {
     }
     
     /// renders map, log, with entities (maybe last move?)
-    pub fn render(&mut self) -> anyhow::Result<&mut Self> {
+    pub fn render(&self) -> anyhow::Result<&Self> {
 
         execute!(stdout(), MoveTo(0, 0))?;
         

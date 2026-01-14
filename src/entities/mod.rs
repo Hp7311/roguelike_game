@@ -1,5 +1,5 @@
 /// provides Player and Monster (in State)
-use crate::maths::{Cord, Rect, check_cord_in_any_room};
+use crate::maths::{Cord, Rect, check_in_any_room};
 use crate::map::{Map, Tile};
 use crate::state::State;
 use crate::constants::{
@@ -11,13 +11,15 @@ use rand::prelude::*;
 use crossterm::{
     QueueableCommand,
     cursor::MoveTo,
-    style::Print,
+    style::{
+        Print, SetForegroundColor, Color, ResetColor
+    },
 };
 use std::io::Write;
 use log::info;
 
 mod move_player;
-mod move_monster;
+pub mod move_monster;
 mod handle;
 
 pub use move_player::move_player;
@@ -62,7 +64,7 @@ impl Player {
         if map.map.iter().any(|tile| *tile == Tile::Floor) {
             loop {
                 chosen_index = *indexes.choose(&mut rng).unwrap();  // trying deref
-                if map.map[chosen_index] == Tile::Floor && check_cord_in_any_room(&rooms, Cord::from_1d(chosen_index)){
+                if map.map[chosen_index] == Tile::Floor && check_in_any_room(&rooms, Cord::from_1d(chosen_index)){
                     break;  // if spawn on floor
                 }
             }
@@ -87,7 +89,10 @@ impl Player {
             .queue(Print(format!("HP: {}", self.hp)))?
 
             .queue(MoveTo(y.try_into().unwrap(), x.try_into().unwrap()))?
-            .queue(Print("@"))?;
+            .queue(SetForegroundColor(Color::Blue))?
+            .queue(Print("@"))?
+            .queue(ResetColor)?;
+
         stdout.flush()?;
         
         //info!("Player at {}", self.pos);
@@ -114,7 +119,7 @@ impl Monster {
 
                     // validate chosen index
                     if (map.map[chosen_index] == Tile::Floor) 
-                        && (check_cord_in_any_room(rooms, Cord::from_1d(chosen_index))) // spawns in a room
+                        && (check_in_any_room(rooms, Cord::from_1d(chosen_index))) // spawns in a room
                         && (player.get_1d() != chosen_index)                               // does not spawn on player
                         && !(Cord::from_1d(chosen_index).in_vec(&monsters)) {                 // does not spawn on another monster
                         
@@ -143,7 +148,9 @@ impl Monster {
         
         let mut stdout = std::io::stdout();
         stdout.queue(MoveTo(y.try_into().unwrap(), x.try_into().unwrap()))?
-            .queue(Print(format!("{}", self.info.glyph)))?;
+            .queue(SetForegroundColor(Color::Red))?
+            .queue(Print(format!("{}", self.info.glyph)))?
+            .queue(ResetColor)?;
         
         stdout.flush()?;
         Ok(())
@@ -172,7 +179,7 @@ fn get_rand_monster() -> MonsterInfo {  // may say expected &--- found ---
 
 
 /// ALL MONSTERS DEFINED HERE
-fn all_monsters_info() -> Vec<MonsterInfo> {
+pub fn all_monsters_info() -> Vec<MonsterInfo> {
     vec![
         MonsterInfo::new('G', "Globin", 10, 5),
         MonsterInfo::new('D', "Dalek", 30, 25),

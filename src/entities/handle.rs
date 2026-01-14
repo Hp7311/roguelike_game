@@ -2,6 +2,7 @@
 use crate::state::State;
 use crate::constants::{ATTACK_RANGE, PLAYER_STRENGTH};
 use crate::gold::add_to_gold;
+use crate::entities::all_monsters_info;
 
 
 pub fn handle_entities(state: &mut State) {
@@ -16,7 +17,13 @@ pub fn handle_entities(state: &mut State) {
             // player
             monster.info.hp -= PLAYER_STRENGTH;
             if monster.info.hp <= 0 {
-                add_to_gold(monster.info.hp.try_into().unwrap()).unwrap();
+
+                let m_index = all_monsters_info().iter()
+                    .position(|m| m.name == monster.info.name)
+                    .expect("Dead monster not in known monsters");
+
+                add_to_gold(all_monsters_info()[m_index].hp.try_into().unwrap()).unwrap();
+                
                 state.logs.add_to_log(&format!(
                     "You obliterated {} at {}", monster.info.name, monster.pos
                 ));

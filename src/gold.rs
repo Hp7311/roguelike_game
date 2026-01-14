@@ -3,6 +3,7 @@ use std::{fs, io::Write};
 use crossterm::{
     QueueableCommand, cursor::MoveTo, style::Print
 };
+use log::info;
 use std::io;
 
 fn write_to_gold_file(amount: u32) -> io::Result<()> {
@@ -17,7 +18,8 @@ fn read_gold_file() -> io::Result<u32> {
     let gold_amount: u32 = gold_file
         .trim()
         .parse()
-        .expect("File not a u32");
+        .expect("gold.txt not a u32");
+    
     
     Ok(gold_amount)
 }
