@@ -1,4 +1,4 @@
-/// provides functions for drawing floors /*adding entities*/ on top of initial map
+//! provides functions for drawing floors /*adding entities*/ on top of initial map
 use crate::constants::{
     MAX_ROOM_NUM, MAX_ROOM_LENGTH, MAX_ROOM_WIDTH,
     MAP_LENGTH, MAP_WIDTH, RANDOM_CORRIDOR_NUM

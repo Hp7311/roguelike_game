@@ -1,4 +1,4 @@
-/// entry point
+//! entry point
 
 mod state;
 mod entities;
@@ -27,8 +27,7 @@ fn main() -> anyhow::Result<()> {
     loop {
         gs.clear_screen()?
             .render()?;
-        gs
-            .get_input()?
+        gs.get_input()?
             .move_entities()?
             .handle_entities()
             .delete_dead()

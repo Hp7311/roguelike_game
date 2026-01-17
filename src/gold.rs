@@ -1,9 +1,8 @@
-/// 2 public functions to manage gold
+//! 2 public functions to manage gold
 use std::{fs, io::Write};
 use crossterm::{
     QueueableCommand, cursor::MoveTo, style::Print
 };
-use log::info;
 use std::io;
 
 fn write_to_gold_file(amount: u32) -> io::Result<()> {

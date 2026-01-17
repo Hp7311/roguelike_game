@@ -1,4 +1,4 @@
-/// error enums for unified access
+//! error enums
 use thiserror::Error;
 use crate::maths::{Cord, Rect};
 
@@ -31,9 +31,12 @@ pub enum ValidateError {
 }
 /* TODOs: 
 add FOV
-health bar
+
 fix map width != length issue
-err: 
-occasional isolated room
-occasional validation false negative
+
+DOING:
+
+COMMIT_DONE:
+lost/won colouring & position
+add health bar
 */

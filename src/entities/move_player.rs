@@ -1,4 +1,4 @@
-/// functions to do with moving player
+//! functions to do with moving player
 use crate::map::Tile;
 use crate::maths::{Cord, Direction::*};
 use crate::state::State;

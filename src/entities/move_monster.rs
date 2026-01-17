@@ -1,4 +1,4 @@
-/// handles moving monsters logic using a scent map
+//! handles moving monsters logic using a scent map
 use crate::state::State;
 use crate::map::Tile;
 use crate::maths::{Cord, Direction};

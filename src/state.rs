@@ -1,4 +1,4 @@
-/// core struct State used by main.rs
+//! core struct State used by main.rs
 
 use std::io::stdout;
 use crossterm::{
@@ -194,8 +194,8 @@ impl State {
             .validate()?;
 
         match game_over {
-            Won => self.logs.add_to_log("You won!\nRestarting..."),
-            Lost => self.logs.add_to_log("You lost!\nRestarting..."),
+            Won => self.logs.won(),
+            Lost => self.logs.lost(),
         }
         
         

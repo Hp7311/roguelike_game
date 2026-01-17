@@ -1,4 +1,4 @@
-/// provides Player and Monster (in State)
+//! provides Player and Monster (in State)
 use crate::maths::{Cord, Rect, check_in_any_room};
 use crate::map::{Map, Tile};
 use crate::state::State;
@@ -81,12 +81,12 @@ impl Player {
     
     
     pub fn render(&self) -> std::io::Result<()> {
-        let x = MAP_TOP_OFFSET + self.pos.x + 2;
+        let x = MAP_TOP_OFFSET + self.pos.x + 1;
         let y = (self.pos.y + 1) * 2 - 1;
         let mut stdout = std::io::stdout();
 
         stdout.queue(MoveTo(0, 1))?  // hardcoded
-            .queue(Print(format!("HP: {}", self.hp)))?
+            .queue(Print(self.get_hp()))?
 
             .queue(MoveTo(y.try_into().unwrap(), x.try_into().unwrap()))?
             .queue(SetForegroundColor(Color::Blue))?
@@ -98,6 +98,21 @@ impl Player {
         //info!("Player at {}", self.pos);
 
         Ok(())
+    }
+
+    /// returns formatted string
+    fn get_hp(&self) -> String {
+        let bar_length = 10;
+
+        let filled = (self.hp as f32 / PLAYER_HEALTH as f32 * bar_length as f32) as usize;
+        let empty = bar_length - filled;
+
+        format!("HP: [{}{} ] {}/{}",
+            " #".repeat(filled),
+            " -".repeat(empty),
+            self.hp,
+            PLAYER_HEALTH,
+        )
     }
 }
 
@@ -143,7 +158,7 @@ impl Monster {
     
     /// prints a single monster
     pub fn render(&self) -> std::io::Result<()> {
-        let x = MAP_TOP_OFFSET + self.pos.x + 2;
+        let x = MAP_TOP_OFFSET + self.pos.x + 1;
         let y = (self.pos.y + 1) * 2 - 1;
         
         let mut stdout = std::io::stdout();

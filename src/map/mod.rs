@@ -50,7 +50,7 @@ impl Map {
     pub fn render(&self) -> io::Result<()> {
         let mut stdout = io::stdout();
 
-        stdout.queue(MoveTo(0, (MAP_TOP_OFFSET + 1).try_into().unwrap()))?;
+        stdout.queue(MoveTo(0, MAP_TOP_OFFSET.try_into().unwrap()))?;
         stdout.queue( Print( format!("{}", "-".repeat(MAP_LENGTH * 2))) )?
             .queue( MoveToNextLine(1) )?;
 

@@ -1,4 +1,4 @@
-/// function to test if State is valid. returns Err in dev mode, restart in release mode.
+//! function to test if State is valid. returns Err in dev mode, restart in release mode.
 use crate::errors::ValidateError;
 use crate::entities::get_nswe;
 use ValidateError::*;

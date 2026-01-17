@@ -12,8 +12,9 @@ cargo run
 ```
 
 ## Stats
-in `constants.rs` and monsters in `entities::all_monsters_info`
+in `constants.rs`  
+monsters in `entities::all_monsters_info`
 
 ## Architecture
-1D map of `Wall`s and `Floor`s with `Player` and `Monster` struct,    
-`main.rs` only interacts with `State` struct.
+1D map of `Wall`s and `Floor`s with `Player` and `Monster` struct,   
+`main.rs` interacts with `State` struct.

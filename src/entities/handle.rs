@@ -1,4 +1,4 @@
-/// handles monsters and players attacking
+//! handles monsters and players attacking
 use crate::state::State;
 use crate::constants::{ATTACK_RANGE, PLAYER_STRENGTH};
 use crate::gold::add_to_gold;
