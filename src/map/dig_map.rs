@@ -80,11 +80,12 @@ pub fn dig(map: &mut Map) -> Result<Vec<Rect>, BuildError> {
 
 }
 
-enum Tunnel {
+#[derive(Debug, PartialEq)]
+enum TunnelDirection {
     Horizontal,
     Vertical,
 }
-
+use TunnelDirection::*;
 
 
 /// takes vector of Rect middle points, returns vector of floors that should be dug
@@ -96,9 +97,9 @@ fn dig_regular_corridors(centers: Vec<Cord>) -> Result<Vec<Cord>, BuildError> {
         let current = &pair[1];
 
         let dir = if rand::random() {
-            Tunnel::Horizontal
+            TunnelDirection::Horizontal
         } else {
-            Tunnel::Vertical
+            TunnelDirection::Vertical
         };
         
         info!("Digging between {} and {}", previous, current);
@@ -136,10 +137,10 @@ fn dig_random_corridors(centers: Vec<Cord>) -> Result<Vec<Cord>, BuildError> {
         info!("Digging between {} and {} (rand)", first, second);
 
         if rand::random() {
-            ret.extend(dig_tunnel_general(&first, &second, Tunnel::Horizontal)?);
+            ret.extend(dig_tunnel_general(&first, &second, TunnelDirection::Horizontal)?);
         }
         else {
-            ret.extend(dig_tunnel_general(&first, &second, Tunnel::Vertical)?);
+            ret.extend(dig_tunnel_general(&first, &second, TunnelDirection::Vertical)?);
         }
     }
     
@@ -148,351 +149,65 @@ fn dig_random_corridors(centers: Vec<Cord>) -> Result<Vec<Cord>, BuildError> {
 
 
 /// Main operating func on digging corridors. takes two points and return cords that should be dug to floor
-fn dig_tunnel_general(point1: &Cord, point2: &Cord, dir: Tunnel) -> Result<Vec<Cord>, BuildError> {
-    use Tunnel::*;
+/// Horizonal = draw tunnel from point1 horizonally
+/// Vertical = draw tunnel from point1 vertically
+fn dig_tunnel_general(point1: &Cord, point2: &Cord, dir: TunnelDirection) -> Result<Vec<Cord>, BuildError> {
 
-    // extend the two points based on rand and `dir`
+    if point1 == point2 {
+        return Err(BuildError::RoomCenterSame(
+            format!("{} and {}", point1, point2)
+        ));
+    }
+    let mut ret = vec![];
 
-    let mut point1_ext = Vec::new();
-    let mut point2_ext = Vec::new();
-    let mut ret = Vec::new();
+    // default to draw horizontal with point1
+    let (hor, vert) = if dir == Horizontal {
+        (*point1, *point2)
+    } else {
+        (*point2, *point1)
+    };
 
-    // the point that goes ______
-     for y in 0..MAP_LENGTH {
-        match dir {
-            Horizontal => point1_ext.push(Cord::new(point1.x, y)),
-            Vertical => point2_ext.push(Cord::new(point2.x, y)),
+    // extend hor until meets vert
+    let mut pushing_cord = hor;
+
+    loop {
+        ret.push(pushing_cord);
+
+        pushing_cord.y = if hor.y > vert.y {  // should go left
+            pushing_cord.y - 1
+        } else if hor.y < vert.y {  // should go right
+            pushing_cord.y + 1
+        } else {  // two points vertical
+            break;
+        };
+
+        if pushing_cord.y == vert.y {  // push intersect point, exit
+            ret.push(pushing_cord);
+            break;
         }
     }
 
-    // the point that goes |
-     for x in 0..MAP_WIDTH {
-        match dir {
-            Horizontal => point2_ext.push(Cord::new(x, point2.y)),
-            Vertical => point1_ext.push(Cord::new(x, point1.y)),
+    info!("Finished horizonal");
+    // extend vert until meets hor
+    let mut pushing_cord = vert;
+
+    loop {
+        ret.push(pushing_cord);
+
+        pushing_cord.x = if vert.x > hor.x {  // should go up
+            pushing_cord.x - 1
+        } else if vert.x < hor.x {  // should go down
+            pushing_cord.x + 1
+        } else {  // two points horizonal
+            break;
+        };
+
+        if pushing_cord.x == hor.x {  // doesn't push intersect point, exit
+            break;
         }
     }
-    
-    // determine where they intersect
-    let mut intersect = Cord::new(0, 0);
-    
-    point1_ext.iter()
-        .any(|p1| {
-            if point2_ext.iter()
-                .any(|p2| p1 == p2)
-            {
-                intersect = Cord::new(p1.x, p1.y);
-                return true
-            }
-            false
-        });
+    info!("Finished vertical");
 
-    // push floors
-    match dir {
-        Horizontal => {  // point1 going horizonally
-        
-            // two points vertical
-            if intersect.y == point1.y {
-            
-                // push final results to ret
-                
-                ret.extend( point2_ext.iter()  // iterate through x
-                    .filter(|cord| {
-                        let x = cord.x;
-                        
-                        if point2.x > point1.x {  // if point2 below point1
-                            if x < point1.x || x > point2.x {
-                                // cut off excess
-                                return false
-                            }
-                            true
-                        }
-                        else {  // point1 below point2
-                            if x < point2.x || x > point1.x {
-                                return false
-                            }
-                            true
-                        }
-                    })
-                    .cloned()
-                    .collect::<Vec<_>>() );
-            }
-            
-            
-            // intersect at right of point1
-            else if intersect.y > point1.y {
-            
-                // push ___ part of tunnel
-                point1_ext.iter()
-                    .for_each(|horiz_cords| {
-                        if horiz_cords.y < point1.y || horiz_cords.y > intersect.y {
-                            
-                        }
-                        else {
-                            ret.push(horiz_cords.clone())  // hopefully fixes the expected Vec<&Cord> found Vec<Cord> issue
-                        }
-                    });
-                    
-                
-                // push | part of tunnel
-                
-                // intersect below point2
-                if intersect.x > point2.x {
-                
-                    point2_ext.iter()
-                        .for_each(|vert_cords| {
-                            // using >= to not include intersect twice
-                            if vert_cords.x < point2.y || vert_cords.x >= intersect.x {
-                                
-                            } else {
-                                ret.push(vert_cords.clone());
-                            }
-                        })
-                }
-                
-                // intersect above point2
-                else if intersect.x < point2.x {
-                    
-                    point2_ext.iter()
-                        .for_each(|vert_cords| {
-                            if vert_cords.x <= intersect.x || vert_cords.x > point2.x {
-                                
-                            }
-                            else {
-                                ret.push(vert_cords.clone());
-                            }
-                        })
-                }
-                
-                // Horizontal right
-                else if intersect.x == point2.x {
-                    // nothing to be done, already covered
-                }
-                
-                else {
-                    return Err(BuildError::RoomCenterSame(
-                        format!("Point1: {}, Point2: {}", point1, point2)
-                    ));
-                }
-            }
-            
-            
-            // intersect at left of point1
-            else if intersect.y < point1.y {
-            
-                // push ____ part of tunnel
-                point1_ext.iter()
-                    .for_each(|horiz_cords| {
-                        if horiz_cords.y < intersect.y || horiz_cords.y > point1.y {
-                            
-                        }
-                        else {
-                            ret.push(horiz_cords.clone())
-                        }
-                    });
-                
-                // push | part of tunnel
-                
-                // intersect below point2
-                if intersect.x > point2.x {
-                    point2_ext.iter()
-                        .for_each(|vert_cords| {
-                            // >= to avoid duplicate
-                            if vert_cords.x < point2.x || vert_cords.x >= intersect.x {
-                                
-                            }
-                            else {
-                                ret.push(vert_cords.clone());
-                            }
-                        })
-                }
-                
-                // intersect above point2
-                else if intersect.x < point2.x {
-                    point2_ext.iter()
-                        .for_each(|vert_cords| {
-                            if vert_cords.x <= intersect.x || vert_cords.x > point2.x {
-                                
-                            }
-                            else {
-                                ret.push(vert_cords.clone());
-                            }
-                        })
-                }
-                
-                // Horizontal left
-                else if intersect.x == point2.x {
-                    // already covered
-                }
-                
-                else {
-                    return Err(BuildError::RoomCenterSame(
-                        format!("Point1: {}, Point2: {}", point1, point2)
-                    ));
-                }
-            }
-            
-            // impossible
-            else {
-                return Err(BuildError::RoomCenterSame(
-                    format!("Point1: {}, Point2: {}", point1, point2)
-                ));
-            }
-        },
-        
-        
-        
-        Vertical => {  // point1 going vertically
-            
-            // two points vertical
-            if intersect.y == point2.y {
-            
-                // push final results to ret
-                
-                ret.extend( point1_ext.iter()  // iterate through x
-                    .filter(|&cord| {
-                        let x = cord.x;
-                        
-                        if point2.x > point1.x {  // if point2 below point1
-                            if x < point1.x || x > point2.x {
-                                return false;
-                            }
-                            true
-                        }
-                        else if point2.x < point1.x {  // point1 below point2
-                            if x < point2.x || x > point1.x {
-                                return false;
-                            }
-                            true
-                        }
-                        else {
-                            panic!();  // can't return a BuildError here
-                        }
-                    })
-                    .cloned()
-                    .collect::<Vec<_>>() );
-            }
-            
-            // two points parallel
-            // intersect at right of point2
-            else if intersect.y > point2.y {
-            
-                // push ___ part of tunnel
-                point2_ext.iter()
-                    .for_each(|horiz_cords| {
-                        if horiz_cords.y < point2.y || horiz_cords.y > intersect.y {
-                            
-                        }
-                        else {
-                            ret.push(horiz_cords.clone());
-                        }
-                    });
-                    
-                
-                // push | part of tunnel
-                
-                // intersect below point1
-                if intersect.x > point1.x {
-                
-                    point1_ext.iter()
-                        .for_each(|vert_cords| {
-                            // using >= to not include intersect twice
-                            if vert_cords.x < point1.y || vert_cords.x >= intersect.x {
-                                
-                            } else {
-                                ret.push(vert_cords.clone());
-                            }
-                        })
-                }
-                // intersect above point2
-                else if intersect.x < point1.x {
-                    
-                    point1_ext.iter()
-                        .for_each(|vert_cords| {
-                            if vert_cords.x <= intersect.x || vert_cords.x > point1.x {
-                                
-                            }
-                            else {
-                                ret.push(vert_cords.clone());
-                            }
-                        })
-                }
-                // Horizontal left
-                else if intersect.x == point1.x {
-                    // already covered
-                }
 
-                else {
-                    return Err(BuildError::RoomCenterSame(
-                        format!("Point1: {}, Point2: {}", point1, point2)
-                    ));
-                }
-            }
-            
-            
-            // intersect at left of point2
-            else if intersect.y < point2.y {
-            
-                // push ____ part of tunnel
-                point2_ext.iter()
-                    .for_each(|horiz_cords| {
-                        if horiz_cords.y < intersect.y || horiz_cords.y > point2.y {
-                            
-                        }
-                        else {
-                            ret.push(horiz_cords.clone());
-                        }
-                    });
-                
-                // push | part of tunnel
-                
-                // intersect below point1
-                if intersect.x > point1.x {
-                    point1_ext.iter()
-                        .for_each(|vert_cords| {
-                            // >= to avoid duplicate
-                            if vert_cords.x < point1.x || vert_cords.x >= intersect.x {
-                                
-                            }
-                            else {
-                                ret.push(vert_cords.clone());
-                            }
-                        })
-                }
-                
-                // intersect above point1
-                else if intersect.x < point1.x {
-                    point1_ext.iter()
-                        .for_each(|vert_cords| {
-                            if vert_cords.x <= intersect.x || vert_cords.x > point1.x {
-                                
-                            }
-                            else {
-                                ret.push(vert_cords.clone());
-                            }
-                        })
-                }
-                // Horizontal left
-                else if intersect.x == point1.x {
-                    // already covered
-                }
-                
-                else {
-                    return Err(BuildError::RoomCenterSame(
-                        format!("Point1: {}, Point2: {}", point1, point2)
-                    ));
-                }
-            }
-            
-            // impossible
-            else {
-                return Err(BuildError::RoomCenterSame(
-                    format!("Point1: {}, Point2: {}", point1, point2)
-                ));
-            }
-        },
-    }
-    
     Ok(ret)
-
 }
