@@ -2,6 +2,7 @@
 use crate::errors::ValidateError;
 use crate::entities::get_nswe;
 use ValidateError::*;
+use log::info;
 use crate::state::State;
 use crate::map::Tile;
 use crate::maths::Cord;
@@ -37,6 +38,7 @@ fn validate_map(state: &State) -> Result<(), ValidateError> {
         let mut tunnel_tiles = 0;
 
         for edge in room.get_edges() {
+            //info!("Got edge {edge}");
             for ((x, y), _) in get_nswe() {
 
                 let shifted_x = edge.x as i32 + x;
@@ -55,20 +57,24 @@ fn validate_map(state: &State) -> Result<(), ValidateError> {
                     continue;
                 }
 
+                if state.map.map[shifted_cords.get_1d()] == Tile::Wall {
+                    continue;
+                }
+                //info!("Got one");
                 tunnel_tiles += 1;
-                break;
-            }
-
-            if tunnel_tiles > 0 {
-                break;
             }
         }
+        
+        //info!("");
 
         if tunnel_tiles == 0 {
-            println!("Invalid?");
+            /*println!("Invalid?");
+            //dbg!(room);*/
+            state.clear_screen().unwrap();
             state.render().unwrap();
-            std::thread::sleep(std::time::Duration::from_secs(5));
-            //return Err(RoomIsolatedError(room.clone()));
+            //std::process::exit(1);
+            dbg!(&state.rooms);
+            return Err(RoomIsolatedError(room.clone()));
         }
     }
 

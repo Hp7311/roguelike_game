@@ -1,6 +1,6 @@
 /// core struct State used by main.rs
 
-use std::{any, io::stdout};
+use std::io::stdout;
 use crossterm::{
     terminal::{
         Clear, ClearType, enable_raw_mode, disable_raw_mode
@@ -9,7 +9,7 @@ use crossterm::{
     cursor::MoveTo,
     execute,
 };
-use log::{info, debug};
+use log::info;
 
 use crate::constants::{MAP_TOP_OFFSET, MAP_WIDTH};
 use crate::map::Map;
@@ -80,7 +80,7 @@ impl State {
     }
     
     /// clear screen before game loop
-    pub fn clear_screen(&mut self) -> std::io::Result<&mut Self> {
+    pub fn clear_screen(&self) -> std::io::Result<&Self> {
         info!("Reached clear_screen()");
         execute!(stdout(), Clear(ClearType::All), MoveTo(0, 0)).unwrap();
 

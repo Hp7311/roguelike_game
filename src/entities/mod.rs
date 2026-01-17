@@ -3,7 +3,7 @@ use crate::maths::{Cord, Rect, check_in_any_room};
 use crate::map::{Map, Tile};
 use crate::state::State;
 use crate::constants::{
-    MAP_TOP_OFFSET, MAP_WIDTH, MONSTER_NUMBER, PLAYER_HEALTH
+    MAP_TOP_OFFSET, MONSTER_NUMBER, PLAYER_HEALTH
 };
 use crate::errors::SpawnError;
 
@@ -42,7 +42,7 @@ pub struct Monster {
 
 
 #[derive(Clone, Debug)]
-struct MonsterInfo {
+pub struct MonsterInfo {
     glyph: char,
     name: String,
     hp: i32,

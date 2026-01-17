@@ -167,7 +167,7 @@ impl Rect {
         );
 
         // push horizontals
-        for y in start.y..right_lower.y {
+        for y in start.y..=right_lower.y {
             ret.push(
                 Cord::new(start.x, y)
             );
@@ -177,7 +177,7 @@ impl Rect {
         }
 
         // push verticals
-        for x in start.x..right_lower.x {
+        for x in start.x..=right_lower.x {
 
             // avoid duplicates
             if x == start.x || x == right_lower.x {
@@ -262,5 +262,16 @@ mod tests {
         let rect = Rect::new(Cord::new(0, 0), 4, 4);
 
         assert_eq!(rect.get_center(), Cord::new(2, 2));
+    }
+    #[test]
+    fn test_in_room() {
+        let rect = Rect::new(Cord::new(0, 0), 1, 4);
+
+        let neg_sample = Cord::new(0, 1);
+
+        let pos_sample = Cord::new(3, 0);
+
+        assert!(!(neg_sample.in_rect(&rect)));
+        assert!(pos_sample.in_rect(&rect));
     }
 }

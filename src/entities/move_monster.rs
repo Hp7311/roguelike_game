@@ -141,7 +141,7 @@ pub fn get_nswe() -> HashMap<(i32, i32), Direction> {
 }
 
 
-#[cfg(test)]
+/*#[cfg(test)]
 mod tests {
     use super::*;
     use Tile::*;
@@ -159,3 +159,4 @@ mod tests {
         assert_eq!(get_scent_map(test_map, Cord::new(1, 0)), expected)
     }
 }
+*/

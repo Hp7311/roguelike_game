@@ -54,7 +54,7 @@ pub fn dig(map: &mut Map) -> Result<Vec<Rect>, BuildError> {
     }
     
     // CORRIDORS
-    let mut center_cords = Vec::new();
+    let mut center_cords = vec![];
 
     for rect in rects.iter() {
         center_cords.push(rect.get_center());
@@ -63,14 +63,16 @@ pub fn dig(map: &mut Map) -> Result<Vec<Rect>, BuildError> {
 
     let floors: Vec<Cord> = dig_regular_corridors(center_cords.clone())?;
     
-    for fl in floors {
-        map.map[fl.get_1d()] = Tile::Floor;
+
+    for floor in floors {
+        map.map[floor.get_1d()] = Tile::Floor;
     }
+
 
     let random_floors = dig_random_corridors(center_cords.clone())?;
 
-    for fl in random_floors {
-        map.map[fl.get_1d()] = Tile::Floor
+    for floor in random_floors {
+        map.map[floor.get_1d()] = Tile::Floor;
     }
 
 
@@ -87,7 +89,7 @@ enum Tunnel {
 
 /// takes vector of Rect middle points, returns vector of floors that should be dug
 fn dig_regular_corridors(centers: Vec<Cord>) -> Result<Vec<Cord>, BuildError> {
-    let mut ret = Vec::new();
+    let mut ret = vec![];
 
     for pair in centers.windows(2) {
         let previous = &pair[0];
@@ -99,7 +101,16 @@ fn dig_regular_corridors(centers: Vec<Cord>) -> Result<Vec<Cord>, BuildError> {
             Tunnel::Vertical
         };
         
+        info!("Digging between {} and {}", previous, current);
+
         let tunnel = dig_tunnel_general(&previous, &current, dir)?;
+
+        // dbg
+        if tunnel.len() == 0 {
+            info!("Err digging");
+        }
+        //info!("{:?}", tunnel);
+
         ret.extend(tunnel);
         
     }
@@ -110,7 +121,7 @@ fn dig_regular_corridors(centers: Vec<Cord>) -> Result<Vec<Cord>, BuildError> {
 
 fn dig_random_corridors(centers: Vec<Cord>) -> Result<Vec<Cord>, BuildError> {
     let mut rng = rand::rng();
-    let mut ret = Vec::new();
+    let mut ret = vec![];
     
     for _ in 0..RANDOM_CORRIDOR_NUM {
         let first = centers.choose(&mut rng).unwrap().clone();
@@ -121,21 +132,22 @@ fn dig_random_corridors(centers: Vec<Cord>) -> Result<Vec<Cord>, BuildError> {
             }
             second = centers.choose(&mut rng).unwrap().clone();
         }
-        //info!("Random: Got point1: {}, point2: {}", first, second);
+
+        info!("Digging between {} and {} (rand)", first, second);
+
         if rand::random() {
-            ret.extend(dig_tunnel_general(&first, &second, Tunnel::Horizontal)?);  // may still complain about expect &T got T
+            ret.extend(dig_tunnel_general(&first, &second, Tunnel::Horizontal)?);
         }
         else {
-            ret.extend(dig_tunnel_general(&first, &second, Tunnel::Vertical)?);  // may still complain about expect &T got T
+            ret.extend(dig_tunnel_general(&first, &second, Tunnel::Vertical)?);
         }
-        //info!("Success");
     }
     
     Ok(ret)
 }
 
 
-/// Main operating func on digging corridors. takes two points and return cords that should be dug -> floor
+/// Main operating func on digging corridors. takes two points and return cords that should be dug to floor
 fn dig_tunnel_general(point1: &Cord, point2: &Cord, dir: Tunnel) -> Result<Vec<Cord>, BuildError> {
     use Tunnel::*;
 
@@ -146,24 +158,20 @@ fn dig_tunnel_general(point1: &Cord, point2: &Cord, dir: Tunnel) -> Result<Vec<C
     let mut ret = Vec::new();
 
     // the point that goes ______
-    (0..MAP_LENGTH).collect::<Vec<_>>()
-        .iter()
-        .for_each(|&y| {
-            match dir {
-                Horizontal => point1_ext.push(Cord::new(point1.x, y)),
-                Vertical => point2_ext.push(Cord::new(point2.x, y)),
-            }
-        });
+     for y in 0..MAP_LENGTH {
+        match dir {
+            Horizontal => point1_ext.push(Cord::new(point1.x, y)),
+            Vertical => point2_ext.push(Cord::new(point2.x, y)),
+        }
+    }
 
     // the point that goes |
-    (0..MAP_WIDTH).collect::<Vec<_>>()
-        .iter()
-        .for_each(|&x| {
-            match dir {
-                Horizontal => point2_ext.push(Cord::new(x, point2.y)),
-                Vertical => point1_ext.push(Cord::new(x, point1.y)),
-            }
-        });  // not idiomatic
+     for x in 0..MAP_WIDTH {
+        match dir {
+            Horizontal => point2_ext.push(Cord::new(x, point2.y)),
+            Vertical => point1_ext.push(Cord::new(x, point1.y)),
+        }
+    }
     
     // determine where they intersect
     let mut intersect = Cord::new(0, 0);

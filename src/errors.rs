@@ -33,5 +33,7 @@ pub enum ValidateError {
 add FOV
 health bar
 fix map width != length issue
-implement validate
+err: 
+occasional isolated room
+occasional validation false negative
 */

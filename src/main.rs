@@ -25,8 +25,8 @@ fn main() -> anyhow::Result<()> {
         
     // turn-based game loop
     loop {
-        gs.clear_screen()?;
-        gs.render()?;
+        gs.clear_screen()?
+            .render()?;
         gs
             .get_input()?
             .move_entities()?
