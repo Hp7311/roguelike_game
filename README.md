@@ -13,7 +13,8 @@ cargo run
 
 ## Stats
 in `constants.rs`  
-monsters in `entities::all_monsters_info`
+monsters in `entities::all_monsters_info`  
+`export RUST_LOG=info` for logging.
 
 ## Architecture
 1D map of `Wall`s and `Floor`s with `Player` and `Monster` struct,   

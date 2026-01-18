@@ -41,12 +41,11 @@ impl Map {
         }
     }
     
-    /// dig rooms
     pub fn dig_rooms(&mut self) -> Result<Vec<Rect>, BuildError> {
         dig_map::dig(self)
     }
     
-    /// render map
+    /// 1 space between each Tile
     pub fn render(&self) -> io::Result<()> {
         let mut stdout = io::stdout();
 
@@ -55,7 +54,6 @@ impl Map {
             .queue( MoveToNextLine(1) )?;
 
         for (i, tile) in self.map.iter().enumerate() {
-            //print!("|");
             match tile {
                 Wall => {
                     stdout.queue(SetForegroundColor(Color::Grey))?

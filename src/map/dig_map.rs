@@ -8,9 +8,7 @@ use crate::map::{Map, Tile};
 use crate::errors::BuildError;
 
 use rand::prelude::*;
-use log::{
-    debug, info
-};
+use log::info;
 
 
 /// digs rooms and connect them per constants.rs

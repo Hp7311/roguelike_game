@@ -15,4 +15,4 @@ pub const RANDOM_CORRIDOR_NUM: u32 = 4;
 // win/lost logs
 pub const MAP_TOP_OFFSET: usize = 3;
 pub const MAP_WIDTH: usize = 30;
-pub const MAP_LENGTH: usize = 30;
+pub const MAP_LENGTH: usize = 31;
