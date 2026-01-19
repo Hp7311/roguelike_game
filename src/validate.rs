@@ -2,7 +2,6 @@
 use crate::errors::ValidateError;
 use crate::entities::get_nswe;
 use ValidateError::*;
-use log::info;
 use crate::state::State;
 use crate::map::Tile;
 use crate::maths::Cord;
@@ -23,12 +22,12 @@ fn validate_map(state: &State) -> Result<(), ValidateError> {
 
     let map = &state.map.map;
     // floors exist
-    if !(map.iter().any(|e| *e == Tile::Floor)) {
+    if !map.contains(&Tile::Floor) {
         return Err(MapErr("Map all walls".into()))
     }
 
     // correct length
-    if map.len() != MAP_LENGTH * MAP_WIDTH {
+    if map.len() != *MAP_LENGTH * *MAP_WIDTH {
         return Err(MapErr(format!("Incorrect length: {}", state.map.map.len())))
     }
 
@@ -49,7 +48,7 @@ fn validate_map(state: &State) -> Result<(), ValidateError> {
                 }
                 let shifted_cords: Cord = Cord::new(shifted_x as usize, shifted_y as usize);
 
-                if shifted_cords.in_rect(&room) {
+                if shifted_cords.in_rect(room) {
                     continue;
                 }
 

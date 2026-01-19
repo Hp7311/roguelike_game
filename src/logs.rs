@@ -8,7 +8,7 @@ use crossterm::{
 };
 use std::io::Write;
 
-use crate::constants::{MAP_WIDTH, MAP_TOP_OFFSET};
+use crate::constants::{MAP_LENGTH, MAP_TOP_OFFSET};
 
 #[derive(Debug)]
 pub struct Logs {
@@ -28,7 +28,7 @@ impl Logs {
     
     pub fn add_to_log(&mut self, msg: &str) {
         self.msg.push_str(msg);
-        self.msg.push_str("\n");
+        self.msg.push('\n');
     }
     
     pub fn render(&self) -> std::io::Result<()> {
@@ -36,9 +36,9 @@ impl Logs {
         let mut stdout = std::io::stdout();
         // normal logs
         stdout.queue(MoveTo(
-                0, (MAP_TOP_OFFSET + MAP_WIDTH + 2 + 4) as u16  // + 4 to avoid log messages in debug mode
+                0, (MAP_TOP_OFFSET + *MAP_LENGTH + 2 + 4) as u16  // + 4 to avoid log messages in debug mode
             ))?
-            .queue(Print( format!("{}", self.msg) ))?
+            .queue(Print( self.msg.to_string() ))?
             .queue(MoveToNextLine(1))?;
         
         stdout.queue(MoveTo(0, 2))?;

@@ -11,7 +11,7 @@ use crossterm::{
 };
 use log::info;
 
-use crate::constants::{MAP_TOP_OFFSET, MAP_WIDTH};
+use crate::constants::{MAP_TOP_OFFSET, MAP_LENGTH};
 use crate::map::Map;
 use crate::logs::Logs;
 use crate::entities::{
@@ -91,7 +91,7 @@ impl State {
     pub fn get_input(&mut self) -> anyhow::Result<&mut Self> {
         //info!("Reached get_input()");
 
-        execute!(stdout(), MoveTo(0, (MAP_TOP_OFFSET + MAP_WIDTH + 2) as u16))?;
+        execute!(stdout(), MoveTo(0, (MAP_TOP_OFFSET + *MAP_LENGTH + 2) as u16))?;
         enable_raw_mode()?;
     
         loop {
@@ -101,7 +101,8 @@ impl State {
                     KeyCode::Down  | KeyCode::Char('s') => self.move_dir = Some(Down),
                     KeyCode::Left  | KeyCode::Char('a') => self.move_dir = Some(Left),
                     KeyCode::Right | KeyCode::Char('d') => self.move_dir = Some(Right),
-                    KeyCode::Char('r') => {
+                    // commented out due to release mode.
+                    /*KeyCode::Char('r') => {
                         disable_raw_mode()?;
                         *self = Self::init()
                             .dig_floors()?
@@ -109,10 +110,10 @@ impl State {
                         self.clear_screen()?
                             .render()?; // duplicate with main
                         self.get_input()?;  // so it doesn't jump to moving entities
-                    },
+                    },*/
                     KeyCode::Esc   | KeyCode::Char('q') => {
                         disable_raw_mode()?;
-                        execute!(stdout(), MoveTo(0, (MAP_TOP_OFFSET + MAP_WIDTH + 2 + 8) as u16))?;  // avoid covering logs
+                        execute!(stdout(), MoveTo(0, (MAP_TOP_OFFSET + *MAP_LENGTH + 2 + 8) as u16))?;  // avoid covering logs
                         std::process::exit(1);
                     },
                     _ => continue,

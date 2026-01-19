@@ -5,7 +5,7 @@ use crate::maths::{Cord, Direction};
 use crate::errors::SpawnError;
 use Direction::*;
 use std::collections::{VecDeque, HashMap};
-use log::{info, debug};
+use log::debug;
 
 /*[(i32, i32); 4] = [(0, 1), (1, 0), (0, -1), (-1, 0)];
 const NSWE_DIRS: [Direction; 4] = [Right, Down, Left, Up];*/
@@ -14,7 +14,7 @@ const NSWE_DIRS: [Direction; 4] = [Right, Down, Left, Up];*/
 pub fn move_monsters(state: &mut State) -> Result<(), SpawnError> {
 
     let s_map = get_scent_map(
-        state.map.map.clone(), state.player.as_ref().unwrap().pos.clone()
+        state.map.map.clone(), state.player.as_ref().unwrap().pos
     );
     debug!("Scent map: {:?}", s_map);
     for monster in state.monsters.as_mut().unwrap() {
@@ -75,7 +75,7 @@ fn look_around(pos: &Cord, scent_map: &Vec<Option<u32>>) -> Result<Direction, Sp
     
     if ret.is_none() {
         return Err(SpawnError::InvalidPlace(
-            format!("Monster surrounded by walls."),
+            "Monster surrounded by walls.".to_string(),
             *pos
         ))
     }

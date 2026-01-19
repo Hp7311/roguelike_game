@@ -1,6 +1,6 @@
 //! provides functions for drawing floors /*adding entities*/ on top of initial map
 use crate::constants::{
-    MAX_ROOM_NUM, MAX_ROOM_LENGTH, MAX_ROOM_WIDTH,
+    ROOM_NUM, MAX_ROOM_LENGTH, MAX_ROOM_WIDTH,
     MAP_LENGTH, MAP_WIDTH, RANDOM_CORRIDOR_NUM
 };
 use crate::maths::{Cord, Rect};
@@ -20,12 +20,13 @@ pub fn dig(map: &mut Map) -> Result<Vec<Rect>, BuildError> {
 
     // ROOMS
 
-    for room_num in 0..MAX_ROOM_NUM {
+    info!("Digging {} rooms", *ROOM_NUM);
 
+    for room_num in 0..*ROOM_NUM {
         loop {  // loop until satisfied
-            let width = rng.random_range(1..MAX_ROOM_WIDTH);
-            let length = rng.random_range(1..MAX_ROOM_LENGTH);
-            let start_cords = Cord::new(rng.random_range(0..MAP_WIDTH), rng.random_range(0..MAP_LENGTH));
+            let width = rng.random_range(1..*MAX_ROOM_WIDTH);
+            let length = rng.random_range(1..*MAX_ROOM_LENGTH);
+            let start_cords = Cord::new(rng.random_range(0..*MAP_LENGTH), rng.random_range(0..*MAP_WIDTH));
 
             let rect_built = Rect::new(start_cords, length, width);
 
@@ -100,14 +101,10 @@ fn dig_regular_corridors(centers: Vec<Cord>) -> Result<Vec<Cord>, BuildError> {
             TunnelDirection::Vertical
         };
         
-        info!("Digging between {} and {}", previous, current);
+        //info!("Digging between {} and {}", previous, current);
 
-        let tunnel = dig_tunnel_general(&previous, &current, dir)?;
+        let tunnel = dig_tunnel_general(previous, current, dir)?;
 
-        // dbg
-        if tunnel.len() == 0 {
-            info!("Err digging");
-        }
         //info!("{:?}", tunnel);
 
         ret.extend(tunnel);
@@ -123,16 +120,16 @@ fn dig_random_corridors(centers: Vec<Cord>) -> Result<Vec<Cord>, BuildError> {
     let mut ret = vec![];
     
     for _ in 0..RANDOM_CORRIDOR_NUM {
-        let first = centers.choose(&mut rng).unwrap().clone();
-        let mut second = centers.choose(&mut rng).unwrap().clone();
+        let first = *centers.choose(&mut rng).unwrap();
+        let mut second = *centers.choose(&mut rng).unwrap();
         loop {
             if second != first {
                 break;
             }
-            second = centers.choose(&mut rng).unwrap().clone();
+            second = *centers.choose(&mut rng).unwrap();
         }
 
-        info!("Digging between {} and {} (rand)", first, second);
+        //info!("Digging between {} and {} (rand)", first, second);
 
         if rand::random() {
             ret.extend(dig_tunnel_general(&first, &second, TunnelDirection::Horizontal)?);
@@ -185,7 +182,7 @@ fn dig_tunnel_general(point1: &Cord, point2: &Cord, dir: TunnelDirection) -> Res
         }
     }
 
-    info!("Finished horizonal");
+    //info!("Finished horizonal");
     // extend vert until meets hor
     let mut pushing_cord = vert;
 
@@ -204,7 +201,7 @@ fn dig_tunnel_general(point1: &Cord, point2: &Cord, dir: TunnelDirection) -> Res
             break;
         }
     }
-    info!("Finished vertical");
+    //info!("Finished vertical");
 
 
     Ok(ret)

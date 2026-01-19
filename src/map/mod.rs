@@ -37,7 +37,7 @@ impl Map {
     
     pub fn new() -> Self {
         Self {
-            map: vec![Wall; MAP_WIDTH * MAP_LENGTH],
+            map: vec![Wall; *MAP_WIDTH * *MAP_LENGTH],
         }
     }
     
@@ -50,7 +50,7 @@ impl Map {
         let mut stdout = io::stdout();
 
         stdout.queue(MoveTo(0, MAP_TOP_OFFSET.try_into().unwrap()))?;
-        stdout.queue( Print( format!("{}", "-".repeat(MAP_LENGTH * 2))) )?
+        stdout.queue( Print( "-".repeat(*MAP_WIDTH * 2).to_string()) )?
             .queue( MoveToNextLine(1) )?;
 
         for (i, tile) in self.map.iter().enumerate() {
@@ -64,12 +64,12 @@ impl Map {
                     stdout.queue(Print("  "))?
                 },
             };
-            if (i + 1) % MAP_LENGTH == 0 {
+            if (i + 1) % *MAP_WIDTH == 0 {
                 stdout.queue(MoveToNextLine(1))?;
             }
         }
 
-        stdout.queue( Print( format!("{}", "-".repeat(MAP_LENGTH * 2))) )?;
+        stdout.queue( Print( "-".repeat(*MAP_WIDTH * 2).to_string()) )?;
         
         stdout.flush()?;
 

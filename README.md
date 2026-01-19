@@ -1,6 +1,3 @@
-## Status
-In development.
-
 ## Description
 Roguelike game in ASCII.
 
@@ -9,13 +6,20 @@ Roguelike game in ASCII.
 git clone https://github.com/Hp7311/roguelike_game.git
 cd roguelike_game
 cargo run
-```
+```  
+Move by WSAD or arrow keys. q to quit.
 
 ## Stats
 in `constants.rs`  
-monsters in `entities::all_monsters_info`  
-`export RUST_LOG=info` for logging.
+Map data and Monster number can be controlled through environmental variables.  
+
+## Features
+Dynamically rendered room stats and monster number  
+Customize monster names and stats  
+Gold system  
 
 ## Architecture
-1D map of `Wall`s and `Floor`s with `Player` and `Monster` struct,   
-`main.rs` interacts with `State` struct.
+1D map of `Tile` with `Player` and `Monster` struct,   
+`main.rs` interacts with `State` struct.  
+
+Built with Rust :)

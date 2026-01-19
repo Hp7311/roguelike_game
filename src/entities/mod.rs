@@ -3,7 +3,7 @@ use crate::maths::{Cord, Rect, check_in_any_room};
 use crate::map::{Map, Tile};
 use crate::state::State;
 use crate::constants::{
-    MAP_TOP_OFFSET, MONSTER_NUMBER, PLAYER_HEALTH
+    MAP_TOP_OFFSET, MONSTER_NUMBER, PLAYER_HEALTH, all_monsters_info
 };
 use crate::errors::SpawnError;
 
@@ -52,19 +52,19 @@ pub struct MonsterInfo {
 impl Player {
 
     pub fn get_pos(&self) -> Cord {
-        self.pos.clone()
+        self.pos
     }
 
     pub fn spawn(map: &Map, rooms: &Vec<Rect>) -> Result<Self, SpawnError> {
         let mut rng = rand::rng();
         let indexes = (0..map.map.len()).collect::<Vec<_>>();
         
-        let mut chosen_index = 0;
+        let mut chosen_index: usize;
         
-        if map.map.iter().any(|tile| *tile == Tile::Floor) {
+        if map.map.contains(&Tile::Floor) {
             loop {
                 chosen_index = *indexes.choose(&mut rng).unwrap();  // trying deref
-                if map.map[chosen_index] == Tile::Floor && check_in_any_room(&rooms, Cord::from_1d(chosen_index)){
+                if map.map[chosen_index] == Tile::Floor && check_in_any_room(rooms, Cord::from_1d(chosen_index)){
                     break;  // if spawn on floor
                 }
             }
@@ -121,13 +121,15 @@ impl Monster {
     pub fn spawn(map: &Map, rooms: &Vec<Rect>, player: &Cord) -> Result<Vec<Self>, SpawnError> {
         let mut rng = rand::rng();
         let indexes: Vec<_> = (0..map.map.len()).collect();
-        let mut chosen_index = 0;
+        let mut chosen_index: usize;
         
         let mut monsters = Vec::new();
+
+        info!("Spawning {} monsters", *MONSTER_NUMBER);
         
-        for _ in 0..MONSTER_NUMBER {
+        for _ in 0..*MONSTER_NUMBER {
             
-            if map.map.iter().any(|tile| *tile == Tile::Floor) {
+            if map.map.contains(&Tile::Floor) {
 
                 loop {
                     chosen_index = *indexes.choose(&mut rng).unwrap();
@@ -175,7 +177,7 @@ impl Monster {
 impl MonsterInfo {
 
     /// new MonsterInfo for convienence in all_monsters_info()
-    fn new(glyph: char, name: &str, hp: i32, strength: u32) -> Self {
+    pub fn new(glyph: char, name: &str, hp: i32, strength: u32) -> Self {
         Self {
             glyph,
             name: name.to_string(),
@@ -193,15 +195,6 @@ fn get_rand_monster() -> MonsterInfo {  // may say expected &--- found ---
 }
 
 
-/// ALL MONSTERS DEFINED HERE
-pub fn all_monsters_info() -> Vec<MonsterInfo> {
-    vec![
-        MonsterInfo::new('G', "Globin", 10, 5),
-        MonsterInfo::new('D', "Dalek", 30, 25),
-        MonsterInfo::new('C', "Cyberman", 20, 20),
-    ]
-}
-
 
 /// delete dead units
 pub fn delete_dead(state: &mut State) {
@@ -214,7 +207,7 @@ pub fn delete_dead(state: &mut State) {
     state.monsters.as_mut().unwrap()
         .retain(|monster| monster.info.hp > 0);  // filter out dead monsters
     
-    if state.monsters.as_ref().unwrap().len() == 0 {
+    if state.monsters.as_ref().unwrap().is_empty() {
         state.game_won = true;
     };
 }

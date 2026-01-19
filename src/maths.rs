@@ -17,13 +17,13 @@ impl Cord {
     
     /// gets 1D index from the 2D index
     pub fn get_1d(&self) -> usize {
-        self.x * MAP_WIDTH + self.y
+        self.x * *MAP_WIDTH + self.y
     }
     
     /// get 2D index from flat index
     pub fn from_1d(i: usize) -> Self {
-        let y = i % MAP_WIDTH;
-        let x = i / MAP_WIDTH;
+        let y = i % *MAP_WIDTH;
+        let x = i / *MAP_WIDTH;
         
         Self { x, y }
     }
@@ -44,7 +44,7 @@ impl Cord {
     /// if other is right beside self mathematically
     pub fn right_beside(&self, other: &Cord) -> bool {
         for ((x, y), _) in get_nswe() {
-            let shift_x = self.x as i32+ x;
+            let shift_x = self.x as i32 + x;
             let shift_y = self.y as i32 + y;
 
             if shift_x < 0 || shift_y < 0 { continue; }
@@ -110,17 +110,17 @@ impl Rect {
     /// whether self can fit in the Map
     pub fn can_fit(&self) -> bool {
     
-        let start: Cord = self.start.clone();
+        let start: Cord = self.start;
         let right_lower: Cord = Cord::new(
             start.x + self.width - 1,
             start.y + self.length - 1,
         );
         
         // PS this relies on map passed to this function being correctly built from constants
-        if start.x >= MAP_WIDTH || start.y >= MAP_LENGTH {
+        if start.x >= *MAP_LENGTH || start.y >= *MAP_WIDTH {
             return false;
         }
-        if right_lower.x >= MAP_WIDTH || right_lower.y >= MAP_LENGTH {
+        if right_lower.x >= *MAP_LENGTH || right_lower.y >= *MAP_WIDTH {
             return false;
         }
         

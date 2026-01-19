@@ -16,14 +16,13 @@ pub fn move_player(state: &mut State) -> anyhow::Result<()> {
         state.player.as_ref().unwrap().pos.x as isize,
         state.player.as_ref().unwrap().pos.y as isize
     );
-    let moved_cords;
-    
-    match direction {
-        Up => moved_cords = (target_x - 1, target_y),
-        Down => moved_cords = (target_x + 1, target_y),
-        Left => moved_cords = (target_x, target_y - 1),
-        Right => moved_cords = (target_x, target_y + 1),
-    }
+
+    let moved_cords = match direction {
+        Up => (target_x - 1, target_y),
+        Down => (target_x + 1, target_y),
+        Left => (target_x, target_y - 1),
+        Right => (target_x, target_y + 1),
+    };
     
     if moved_cords.0 < 0 || moved_cords.1 < 0 {  // moving out of bound
         return Ok(())
@@ -32,7 +31,7 @@ pub fn move_player(state: &mut State) -> anyhow::Result<()> {
     // convert to usize Cord after checking
     let moved_cords = Cord::new(moved_cords.0 as usize, moved_cords.1 as usize);
     
-    if moved_cords.x >= MAP_WIDTH || moved_cords.y >= MAP_LENGTH {  // moving out of bound
+    if moved_cords.x >= *MAP_LENGTH || moved_cords.y >= *MAP_WIDTH {  // moving out of bound
         return Ok(())
     }
 
